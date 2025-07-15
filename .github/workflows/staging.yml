@@ -92,7 +92,7 @@ jobs:
         token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
     
     - name: Deploy to Staging Environment
-      uses: appleboy/ssh-action@v1.0.0
+      uses: appleboy/ssh-action@v1.2.2
       with:
         host: ${{ secrets.STAGING_DROPLET_HOST }}
         username: ${{ secrets.DROPLET_USERNAME }}
