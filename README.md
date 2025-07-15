@@ -1,6 +1,21 @@
 # AI-Based Digital Prescription Validation System
 
+[![CI/CD Pipeline](https://github.com/HealthFlowEgy/ai-prescription-validation-system/actions/workflows/deploy.yml/badge.svg)](https://github.com/HealthFlowEgy/ai-prescription-validation-system/actions/workflows/deploy.yml)
+[![Test Suite](https://github.com/HealthFlowEgy/ai-prescription-validation-system/actions/workflows/test.yml/badge.svg)](https://github.com/HealthFlowEgy/ai-prescription-validation-system/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
 A comprehensive web application that leverages artificial intelligence, optical character recognition (OCR), and natural language processing (NLP) to validate digital prescriptions. This system integrates multiple GitHub projects to provide advanced prescription processing, drug interaction checking, and validation capabilities.
+
+## 🚀 **Quick Links**
+
+- **🔗 GitHub Repository**: [https://github.com/HealthFlowEgy/ai-prescription-validation-system](https://github.com/HealthFlowEgy/ai-prescription-validation-system)
+- **📚 Complete Documentation**: [CI/CD Deployment Guide](./CICD_DEPLOYMENT_GUIDE.md)
+- **⚡ Quick Start**: [15-Minute Deployment Guide](./QUICK_START_DEPLOYMENT.md)
+- **🤝 Contributing**: [Contributing Guidelines](./CONTRIBUTING.md)
+- **🐛 Issues**: [Report Issues](https://github.com/HealthFlowEgy/ai-prescription-validation-system/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/HealthFlowEgy/ai-prescription-validation-system/discussions)
 
 ## Table of Contents
 
