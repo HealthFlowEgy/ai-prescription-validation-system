@@ -5,12 +5,26 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+[![React](https://img.shields.io/badge/react-19.1.0-blue.svg)](https://reactjs.org/)
 
-A comprehensive web application that leverages artificial intelligence, optical character recognition (OCR), and natural language processing (NLP) to validate digital prescriptions. This system integrates multiple GitHub projects to provide advanced prescription processing, drug interaction checking, and validation capabilities.
+A comprehensive web application that leverages artificial intelligence, optical character recognition (OCR), and natural language processing (NLP) to validate digital prescriptions. This system integrates multiple GitHub projects and provides a professional frontend interface for healthcare professionals.
+
+## 🚀 **Live Deployment**
+
+### **Frontend Application (HealthFlow)**
+- **URL**: [https://ujaejnrp.manus.space](https://ujaejnrp.manus.space)
+- **Demo Credentials**: doctor@healthflow.com / demo123
+- **Features**: Professional medical interface, multi-method upload, real-time validation
+
+### **Backend API**
+- **URL**: [https://60h5imcyw3dv.manus.space](https://60h5imcyw3dv.manus.space)
+- **Health Check**: [https://60h5imcyw3dv.manus.space/api/health](https://60h5imcyw3dv.manus.space/api/health)
+- **Features**: AI validation, Snowstorm integration, comprehensive API
 
 ## 🚀 **Quick Links**
 
 - **🔗 GitHub Repository**: [https://github.com/HealthFlowEgy/ai-prescription-validation-system](https://github.com/HealthFlowEgy/ai-prescription-validation-system)
+- **🎨 Frontend Documentation**: [Frontend README](./FRONTEND_README.md)
 - **📚 Complete Documentation**: [CI/CD Deployment Guide](./CICD_DEPLOYMENT_GUIDE.md)
 - **⚡ Quick Start**: [15-Minute Deployment Guide](./QUICK_START_DEPLOYMENT.md)
 - **🤝 Contributing**: [Contributing Guidelines](./CONTRIBUTING.md)
@@ -21,6 +35,7 @@ A comprehensive web application that leverages artificial intelligence, optical 
 
 - [Overview](#overview)
 - [Features](#features)
+- [Frontend Interface](#frontend-interface)
 - [Architecture](#architecture)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -32,15 +47,42 @@ A comprehensive web application that leverages artificial intelligence, optical 
 
 ## Overview
 
-The AI-Based Digital Prescription Validation System addresses the critical need for automated prescription validation in healthcare settings. By combining advanced OCR technology, natural language processing, and comprehensive validation rules, this system helps healthcare professionals ensure prescription accuracy, detect potential drug interactions, and maintain compliance with medical standards.
+The AI-Based Digital Prescription Validation System addresses the critical need for automated prescription validation in healthcare settings. By combining advanced OCR technology, natural language processing, comprehensive validation rules, and a professional frontend interface, this system helps healthcare professionals ensure prescription accuracy, detect potential drug interactions, and maintain compliance with medical standards.
 
 ### Key Components
 
-The system integrates three primary GitHub projects:
+The system integrates four primary components:
 
-1. **Pharmacy_AI** - Provides OCR and medication NER capabilities
-2. **medical-data-extraction** - Offers advanced medical document processing
-3. **Snowstorm** - Supplies SNOMED CT terminology services
+1. **HealthFlow Frontend** - Professional React-based interface for doctors
+2. **Pharmacy_AI** - Provides OCR and medication NER capabilities
+3. **medical-data-extraction** - Offers advanced medical document processing
+4. **Snowstorm** - Supplies SNOMED CT terminology services for drug interactions
+
+## Frontend Interface
+
+### **HealthFlow - Professional Medical Interface**
+
+The system includes a comprehensive React-based frontend designed specifically for healthcare professionals:
+
+#### **Key Features**
+- **Professional Medical Design**: Blue and gold color scheme matching healthcare standards
+- **Responsive Interface**: Works seamlessly on desktop, tablet, and mobile devices
+- **Multi-Method Upload**: Support for scanned images, voice recordings, and FHIR API
+- **Real-time Dashboard**: Statistics, charts, and system monitoring
+- **Comprehensive Audit Trail**: Activity logging and compliance reporting
+- **Advanced Settings**: Snowstorm configuration, validation parameters
+
+#### **Technology Stack**
+- **React 19.1.0** with modern hooks and components
+- **TailwindCSS 4.1.7** for responsive styling
+- **Recharts** for data visualization
+- **React Router** for navigation
+- **Lucide React** for professional iconography
+
+#### **Access Information**
+- **Live URL**: [https://ujaejnrp.manus.space](https://ujaejnrp.manus.space)
+- **Demo Login**: doctor@healthflow.com / demo123
+- **Documentation**: [Frontend README](./FRONTEND_README.md)
 
 ## Features
 
@@ -48,6 +90,7 @@ The system integrates three primary GitHub projects:
 
 - **Multi-format Input Support**: Processes handwritten prescriptions, voice audio, and digital data
 - **Advanced OCR Processing**: Extracts text from prescription images with high accuracy
+- **Snowstorm Integration**: SNOMED CT terminology for standardized drug interaction checking
 - **Natural Language Processing**: Identifies medications, dosages, frequencies, and instructions
 - **Drug Interaction Checking**: Detects potential interactions between prescribed medications
 - **Dosage Validation**: Verifies medication dosages against standard therapeutic ranges

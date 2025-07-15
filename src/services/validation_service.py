@@ -10,6 +10,7 @@ from src.models.prescription import (
     Prescription, Medication, ValidationResult, ValidationStatus
 )
 from src.models.user import db
+from src.services.snowstorm_service import SnowstormService, SnowstormDrugInteraction
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -36,11 +37,58 @@ class ValidationIssue:
     confidence: float
 
 class DrugInteractionChecker:
-    """Drug interaction checking service"""
+    """Drug interaction checking service using Snowstorm SNOMED CT server"""
     
-    def __init__(self):
-        # Common drug interactions database (simplified for demo)
-        self.interactions_db = {
+    def __init__(self, snowstorm_url: str = "https://snowstorm.app.evidium.com"):
+        self.snowstorm_service = SnowstormService(snowstorm_url)
+        logger.info(f"Initialized DrugInteractionChecker with Snowstorm server: {snowstorm_url}")
+    
+    def normalize_drug_name(self, drug_name: str) -> str:
+        """Normalize drug name for comparison"""
+        return drug_name.lower().strip().replace(' ', '')
+    
+    def check_interactions(self, medications: List[Medication]) -> List[DrugInteraction]:
+        """Check for drug interactions among medications using Snowstorm"""
+        interactions = []
+        
+        if len(medications) < 2:
+            return interactions
+        
+        try:
+            # Extract drug names from medications
+            drug_names = [med.drug_name for med in medications]
+            
+            # Use Snowstorm service to check interactions
+            snowstorm_interactions = self.snowstorm_service.check_drug_drug_interactions(drug_names)
+            
+            # Convert Snowstorm interactions to our format
+            for snow_interaction in snowstorm_interactions:
+                interaction = DrugInteraction(
+                    drug1=snow_interaction.drug1_name,
+                    drug2=snow_interaction.drug2_name,
+                    severity=snow_interaction.severity,
+                    description=snow_interaction.description,
+                    clinical_recommendation=snow_interaction.clinical_recommendation,
+                    mechanism=snow_interaction.mechanism,
+                    management=snow_interaction.management
+                )
+                interactions.append(interaction)
+                
+                logger.info(f"Found drug interaction via Snowstorm: {interaction.drug1} + {interaction.drug2} ({interaction.severity})")
+        
+        except Exception as e:
+            logger.error(f"Error checking drug interactions via Snowstorm: {str(e)}")
+            # Fallback to basic interaction checking if Snowstorm fails
+            interactions.extend(self._fallback_interaction_check(medications))
+        
+        return interactions
+    
+    def _fallback_interaction_check(self, medications: List[Medication]) -> List[DrugInteraction]:
+        """Fallback interaction checking when Snowstorm is unavailable"""
+        interactions = []
+        
+        # Basic fallback interactions (simplified)
+        fallback_interactions = {
             ('warfarin', 'aspirin'): DrugInteraction(
                 drug1='warfarin',
                 drug2='aspirin',
@@ -50,82 +98,17 @@ class DrugInteractionChecker:
                 mechanism='Both drugs affect blood clotting',
                 management='Consider alternative antiplatelet therapy'
             ),
-            ('lisinopril', 'potassium'): DrugInteraction(
+            ('lisinopril', 'ibuprofen'): DrugInteraction(
                 drug1='lisinopril',
-                drug2='potassium',
-                severity='moderate',
-                description='Risk of hyperkalemia',
-                clinical_recommendation='Monitor potassium levels',
-                mechanism='ACE inhibitors increase potassium retention',
-                management='Regular electrolyte monitoring'
-            ),
-            ('metformin', 'contrast'): DrugInteraction(
-                drug1='metformin',
-                drug2='contrast',
-                severity='moderate',
-                description='Risk of lactic acidosis',
-                clinical_recommendation='Hold metformin before contrast procedures',
-                mechanism='Contrast can affect kidney function',
-                management='Discontinue 48 hours before contrast'
-            ),
-            ('simvastatin', 'clarithromycin'): DrugInteraction(
-                drug1='simvastatin',
-                drug2='clarithromycin',
-                severity='severe',
-                description='Increased risk of myopathy',
-                clinical_recommendation='Avoid concurrent use',
-                mechanism='CYP3A4 inhibition increases statin levels',
-                management='Use alternative antibiotic or statin'
-            )
-        }
-        
-        # Drug class interactions
-        self.class_interactions = {
-            ('ace_inhibitor', 'nsaid'): DrugInteraction(
-                drug1='ACE Inhibitor',
-                drug2='NSAID',
+                drug2='ibuprofen',
                 severity='moderate',
                 description='Reduced antihypertensive effect, kidney function risk',
                 clinical_recommendation='Monitor blood pressure and kidney function',
                 mechanism='NSAIDs reduce prostaglandin-mediated vasodilation',
                 management='Use lowest effective NSAID dose'
-            ),
-            ('warfarin', 'antibiotic'): DrugInteraction(
-                drug1='Warfarin',
-                drug2='Antibiotic',
-                severity='moderate',
-                description='Altered anticoagulation effect',
-                clinical_recommendation='Monitor INR closely',
-                mechanism='Antibiotics can affect vitamin K production',
-                management='Increase INR monitoring frequency'
             )
         }
         
-        # Drug classifications
-        self.drug_classes = {
-            'lisinopril': 'ace_inhibitor',
-            'enalapril': 'ace_inhibitor',
-            'captopril': 'ace_inhibitor',
-            'ibuprofen': 'nsaid',
-            'naproxen': 'nsaid',
-            'diclofenac': 'nsaid',
-            'amoxicillin': 'antibiotic',
-            'azithromycin': 'antibiotic',
-            'clarithromycin': 'antibiotic'
-        }
-    
-    def normalize_drug_name(self, drug_name: str) -> str:
-        """Normalize drug name for comparison"""
-        return drug_name.lower().strip().replace(' ', '')
-    
-    def check_interactions(self, medications: List[Medication]) -> List[DrugInteraction]:
-        """Check for drug interactions among medications"""
-        interactions = []
-        
-        if len(medications) < 2:
-            return interactions
-        
-        # Check direct drug-drug interactions
         for i, med1 in enumerate(medications):
             for med2 in medications[i+1:]:
                 drug1_norm = self.normalize_drug_name(med1.drug_name)
@@ -135,36 +118,13 @@ class DrugInteractionChecker:
                 interaction_key1 = (drug1_norm, drug2_norm)
                 interaction_key2 = (drug2_norm, drug1_norm)
                 
-                if interaction_key1 in self.interactions_db:
-                    interactions.append(self.interactions_db[interaction_key1])
-                elif interaction_key2 in self.interactions_db:
-                    interactions.append(self.interactions_db[interaction_key2])
+                if interaction_key1 in fallback_interactions:
+                    interactions.append(fallback_interactions[interaction_key1])
+                elif interaction_key2 in fallback_interactions:
+                    interactions.append(fallback_interactions[interaction_key2])
         
-        # Check drug class interactions
-        for i, med1 in enumerate(medications):
-            for med2 in medications[i+1:]:
-                drug1_norm = self.normalize_drug_name(med1.drug_name)
-                drug2_norm = self.normalize_drug_name(med2.drug_name)
-                
-                class1 = self.drug_classes.get(drug1_norm)
-                class2 = self.drug_classes.get(drug2_norm)
-                
-                if class1 and class2 and class1 != class2:
-                    class_key1 = (class1, class2)
-                    class_key2 = (class2, class1)
-                    
-                    if class_key1 in self.class_interactions:
-                        interaction = self.class_interactions[class_key1]
-                        # Update with actual drug names
-                        interaction.drug1 = med1.drug_name
-                        interaction.drug2 = med2.drug_name
-                        interactions.append(interaction)
-                    elif class_key2 in self.class_interactions:
-                        interaction = self.class_interactions[class_key2]
-                        # Update with actual drug names
-                        interaction.drug1 = med1.drug_name
-                        interaction.drug2 = med2.drug_name
-                        interactions.append(interaction)
+        if interactions:
+            logger.warning(f"Using fallback interaction checking, found {len(interactions)} interactions")
         
         return interactions
 
