@@ -1,0 +1,157 @@
+name: Staging Deployment
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - development
+
+env:
+  REGISTRY: registry.digitalocean.com
+  IMAGE_NAME: prescription-validator
+  CONTAINER_NAME: prescription-validation-staging
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Initialize database
+      run: |
+        python src/database/init_db.py init
+    
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v --cov=src
+
+  build-staging:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+    
+    - name: Build staging container image
+      run: |
+        docker build -t $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:staging-$GITHUB_SHA .
+        docker build -t $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:staging-latest .
+    
+    - name: Log in to DigitalOcean Container Registry
+      run: doctl registry login --expiry-seconds 1200
+    
+    - name: Push staging image to DigitalOcean Container Registry
+      run: |
+        docker push $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:staging-$GITHUB_SHA
+        docker push $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:staging-latest
+
+  deploy-staging:
+    needs: build-staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+    
+    - name: Deploy to Staging Environment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_DROPLET_HOST }}
+        username: ${{ secrets.DROPLET_USERNAME }}
+        key: ${{ secrets.DROPLET_SSH_KEY }}
+        port: ${{ secrets.DROPLET_PORT }}
+        script: |
+          # Login to Digital Ocean Container Registry
+          doctl registry login --expiry-seconds 1200
+          
+          # Stop and remove existing staging container
+          docker stop ${{ env.CONTAINER_NAME }} || true
+          docker rm ${{ env.CONTAINER_NAME }} || true
+          
+          # Pull latest staging image
+          docker pull ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:staging-latest
+          
+          # Run new staging container
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            --restart unless-stopped \
+            -p 8080:5000 \
+            -v /opt/prescription-validator-staging/uploads:/app/uploads \
+            -v /opt/prescription-validator-staging/data:/app/data \
+            -v /opt/prescription-validator-staging/logs:/app/logs \
+            -e FLASK_ENV=staging \
+            -e DATABASE_URL=sqlite:///data/staging.db \
+            -e SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }} \
+            ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:staging-latest
+          
+          # Clean up old images
+          docker image prune -f
+    
+    - name: Staging Health Check
+      run: |
+        sleep 30
+        curl -f http://${{ secrets.STAGING_DROPLET_HOST }}:8080/api/health || exit 1
+    
+    - name: Run Staging Integration Tests
+      run: |
+        # Run additional integration tests against staging environment
+        curl -f http://${{ secrets.STAGING_DROPLET_HOST }}:8080/api/users
+        echo "Staging deployment successful!"
+
+  notify-staging:
+    needs: [test, build-staging, deploy-staging]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify staging deployment status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#staging-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: |
+          Staging Deployment Status: ${{ job.status }}
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+          Environment: staging
+      if: always() && secrets.SLACK_WEBHOOK != ''
+
