@@ -17,7 +17,7 @@ pdf2image==1.17.0
 pillow==11.3.0
 pytesseract==0.3.13
 requests==2.32.4
-SQLAlchemy==2.0.41
+SQLAlchemy==2.0.42
 typing_extensions==4.14.0
 urllib3==2.5.0
 gunicorn==21.2.0
