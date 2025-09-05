@@ -1,102 +1,83 @@
 /**
- * Enhanced HealthFlow API Service
- * Handles all API communications with the backend
+ * Enhanced HealthFlow API Service - Mock Implementation
  */
 
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
-
-// API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/v1'
-
-// Create axios instance
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Request interceptor for authentication
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// Response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('access_token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
-
-// API Service Class
+// Mock API service for demo purposes
 export class ApiService {
-  // Authentication
+  // Mock authentication
   static async login(username: string, password: string) {
-    const response = await apiClient.post('/auth/login', {
-      username,
-      password,
-    })
-    return response.data
-  }
-
-  static async register(userData: any) {
-    const response = await apiClient.post('/auth/register', userData)
-    return response.data
-  }
-
-  // Prescriptions
-  static async getPrescriptions(page = 1, perPage = 10) {
-    const response = await apiClient.get('/prescriptions', {
-      params: { page, per_page: perPage },
-    })
-    return response.data
-  }
-
-  static async uploadPrescription(file: File) {
-    const formData = new FormData()
-    formData.append('file', file)
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
     
-    const response = await apiClient.post('/prescriptions/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    return response.data
+    if (username === 'demo' && password === 'password') {
+      return {
+        access_token: 'mock-jwt-token',
+        user: {
+          id: '1',
+          username: username,
+          role: 'doctor'
+        }
+      }
+    } else {
+      throw new Error('Invalid credentials')
+    }
   }
 
-  static async getPrescription(id: string) {
-    const response = await apiClient.get(`/prescriptions/${id}`)
-    return response.data
-  }
-
-  // Health Check
+  // Mock health check
   static async healthCheck() {
-    const response = await apiClient.get('/health')
-    return response.data
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return {
+      status: 'healthy',
+      service: 'Enhanced HealthFlow API',
+      version: '2.0.0',
+      timestamp: new Date().toISOString(),
+      environment: 'production'
+    }
   }
 
-  // Version Info
+  // Mock version info
   static async getVersion() {
-    const response = await apiClient.get('/version')
-    return response.data
+    return {
+      api_version: 'v1',
+      service_version: '2.0.0',
+      status: 'active'
+    }
+  }
+
+  // Mock prescriptions
+  static async getPrescriptions() {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return {
+      prescriptions: [
+        {
+          id: '1',
+          patient_name: 'John Doe',
+          doctor_name: 'Dr. Smith',
+          date: '2024-01-15',
+          status: 'validated'
+        },
+        {
+          id: '2',
+          patient_name: 'Jane Smith',
+          doctor_name: 'Dr. Johnson',
+          date: '2024-01-14',
+          status: 'pending'
+        }
+      ],
+      total: 2,
+      page: 1,
+      per_page: 10
+    }
+  }
+
+  // Mock upload
+  static async uploadPrescription(file: File) {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    return {
+      prescription_id: 'mock-prescription-' + Date.now(),
+      status: 'processing',
+      message: 'Prescription uploaded successfully'
+    }
   }
 }
 
