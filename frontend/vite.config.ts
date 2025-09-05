@@ -43,7 +43,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.healthflow\.egypt\.gov\/.*/i,
+            urlPattern: /^https:\/\/healthflow\.vercel\.app\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -77,12 +77,16 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:5000' 
+          : 'https://healthflow.vercel.app',
         changeOrigin: true,
         secure: false
       },
       '/fhir': {
-        target: 'http://localhost:8080',
+        target: process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:8080' 
+          : 'https://healthflow.vercel.app',
         changeOrigin: true,
         secure: false
       }
@@ -103,14 +107,23 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Vercel specific optimizations
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
-      'react-query',
+      '@tanstack/react-query',
       'react-hook-form',
       'axios',
       'date-fns',
@@ -121,13 +134,23 @@ export default defineConfig({
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString())
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV || 'development')
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true
+  },
+  // Vercel specific configuration
+  base: process.env.NODE_ENV === 'production' ? '/' : '/',
+  publicDir: 'public',
+  envPrefix: ['VITE_', 'REACT_APP_'],
+  // Performance optimizations for Vercel
+  esbuild: {
+    target: 'es2020',
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
   }
 })
 
