@@ -1,0 +1,267 @@
+name: Release and Production Deployment
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+env:
+  REGISTRY: registry.digitalocean.com
+  IMAGE_NAME: prescription-validator
+  CONTAINER_NAME: prescription-validation-system
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Initialize database
+      run: |
+        python src/database/init_db.py init
+    
+    - name: Run comprehensive tests
+      run: |
+        python -m pytest tests/ -v --cov=src --cov-report=xml
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: coverage.xml
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  build-release:
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+    
+    - name: Build release container image
+      run: |
+        docker build -t $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:${{ steps.version.outputs.VERSION }} .
+        docker build -t $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:latest .
+    
+    - name: Log in to DigitalOcean Container Registry
+      run: doctl registry login --expiry-seconds 1200
+    
+    - name: Push release image to DigitalOcean Container Registry
+      run: |
+        docker push $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:${{ steps.version.outputs.VERSION }}
+        docker push $REGISTRY/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/$IMAGE_NAME:latest
+    
+    - name: Create release artifacts
+      run: |
+        # Create deployment package
+        tar -czf prescription-validator-${{ steps.version.outputs.VERSION }}.tar.gz \
+          --exclude='.git' \
+          --exclude='__pycache__' \
+          --exclude='*.pyc' \
+          --exclude='venv' \
+          --exclude='node_modules' \
+          .
+    
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts
+        path: prescription-validator-*.tar.gz
+
+  deploy-production:
+    needs: build-release
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+    
+    - name: Deploy to Production Environment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.DROPLET_HOST }}
+        username: ${{ secrets.DROPLET_USERNAME }}
+        key: ${{ secrets.DROPLET_SSH_KEY }}
+        port: ${{ secrets.DROPLET_PORT }}
+        script: |
+          # Login to Digital Ocean Container Registry
+          doctl registry login --expiry-seconds 1200
+          
+          # Create backup of current deployment
+          docker stop ${{ env.CONTAINER_NAME }} || true
+          docker commit ${{ env.CONTAINER_NAME }} ${{ env.CONTAINER_NAME }}-backup-$(date +%Y%m%d-%H%M%S) || true
+          docker rm ${{ env.CONTAINER_NAME }} || true
+          
+          # Pull specific version
+          docker pull ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          
+          # Run new production container
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            --restart unless-stopped \
+            -p 80:5000 \
+            -v /opt/prescription-validator/uploads:/app/uploads \
+            -v /opt/prescription-validator/data:/app/data \
+            -v /opt/prescription-validator/logs:/app/logs \
+            -e FLASK_ENV=production \
+            -e DATABASE_URL=sqlite:///data/production.db \
+            -e SECRET_KEY=${{ secrets.PRODUCTION_SECRET_KEY }} \
+            ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          
+          # Clean up old images (keep last 3 versions)
+          docker images ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }} --format "table {{.Tag}}\t{{.ID}}" | tail -n +4 | awk '{print $2}' | xargs -r docker rmi || true
+    
+    - name: Production Health Check
+      run: |
+        sleep 60
+        curl -f http://${{ secrets.DROPLET_HOST }}/api/health || exit 1
+    
+    - name: Run Production Smoke Tests
+      run: |
+        # Run smoke tests against production
+        curl -f http://${{ secrets.DROPLET_HOST }}/api/users
+        curl -f http://${{ secrets.DROPLET_HOST }}/
+        echo "Production deployment successful!"
+
+  create-github-release:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Download release artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: release-artifacts
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog from git commits
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
+        fi
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        release_name: Release ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## Changes in ${{ steps.version.outputs.VERSION }}
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ## Deployment Information
+          - **Production URL**: http://${{ secrets.DROPLET_HOST }}
+          - **Docker Image**: ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          - **Deployment Date**: $(date -u)
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./prescription-validator-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_name: prescription-validator-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_content_type: application/gzip
+
+  notify-release:
+    needs: [test, security-scan, build-release, deploy-production, create-github-release]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Notify release deployment status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#releases'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: |
+          🚀 Production Release Deployment: ${{ job.status }}
+          Version: ${{ steps.version.outputs.VERSION }}
+          Production URL: http://${{ secrets.DROPLET_HOST }}
+          GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.VERSION }}
+      if: always() && secrets.SLACK_WEBHOOK != ''
+
