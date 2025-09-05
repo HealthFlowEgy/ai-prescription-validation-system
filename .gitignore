@@ -1,0 +1,596 @@
+# Enhanced HealthFlow AI Digital Prescription System v2.0
+# .gitignore - Comprehensive exclusion rules
+
+# ============================================================================
+# ENVIRONMENT AND SECRETS
+# ============================================================================
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+*.env
+.envrc
+
+# Secrets and credentials
+secrets/
+credentials/
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.csr
+config/secrets.py
+config/production.py
+config/staging.py
+
+# ============================================================================
+# PYTHON
+# ============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+test-results/
+test-reports/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ============================================================================
+# NODE.JS / FRONTEND
+# ============================================================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript v1 declaration files
+typings/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Rollup.js default build output
+dist/
+
+# Uncomment if using TypeScript and React
+# *.tsbuildinfo
+
+# ============================================================================
+# DATABASES
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# PostgreSQL
+*.sql
+*.dump
+*.backup
+
+# Redis
+dump.rdb
+appendonly.aof
+
+# ============================================================================
+# LOGS AND MONITORING
+# ============================================================================
+logs/
+*.log
+*.log.*
+log/
+*.out
+*.err
+
+# Application logs
+app.log
+error.log
+access.log
+debug.log
+healthflow.log
+
+# System logs
+syslog
+kern.log
+auth.log
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+metrics/
+
+# ============================================================================
+# UPLOADS AND USER DATA
+# ============================================================================
+uploads/
+media/
+static/uploads/
+user_data/
+prescriptions/
+documents/
+images/
+temp/
+tmp/
+
+# ============================================================================
+# DOCKER AND CONTAINERS
+# ============================================================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.dev.yml
+
+# Container data
+volumes/
+data/
+
+# ============================================================================
+# KUBERNETES
+# ============================================================================
+# Kubernetes secrets (should be managed externally)
+*-secret.yaml
+*-secrets.yaml
+secret.yaml
+secrets.yaml
+
+# Helm
+charts/*/charts/
+charts/*/requirements.lock
+charts/*/values-*.yaml
+
+# ============================================================================
+# TERRAFORM
+# ============================================================================
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Exclude all .tfvars files, which are likely to contain sentitive data
+*.tfvars
+*.tfvars.json
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control using negated pattern
+# !example_override.tf
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+*tfplan*
+
+# ============================================================================
+# CLOUD PROVIDERS
+# ============================================================================
+# AWS
+.aws/
+aws-exports.js
+
+# Google Cloud
+.gcloud/
+gcloud-service-key.json
+service-account-key.json
+
+# Azure
+.azure/
+
+# ============================================================================
+# IDE AND EDITORS
+# ============================================================================
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# PyCharm
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================================================
+# OPERATING SYSTEM
+# ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# BACKUP AND TEMPORARY FILES
+# ============================================================================
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*~
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================================================
+# SECURITY AND COMPLIANCE
+# ============================================================================
+# Security scan results
+bandit-report.json
+safety-report.json
+trivy-results.sarif
+zap-scan-results/
+
+# Audit logs (should be managed externally)
+audit.log
+audit/
+
+# SSL certificates (should be managed externally)
+*.crt
+*.key
+*.pem
+ssl/
+certs/
+
+# ============================================================================
+# TESTING
+# ============================================================================
+# Test results
+test-results/
+test-reports/
+junit.xml
+coverage.xml
+.coverage
+htmlcov/
+
+# Performance test results
+performance-results.json
+load-test-results/
+
+# ============================================================================
+# DOCUMENTATION
+# ============================================================================
+# Generated documentation
+docs/_build/
+docs/build/
+site/
+
+# ============================================================================
+# MISCELLANEOUS
+# ============================================================================
+# Temporary directories
+temp/
+tmp/
+cache/
+
+# Lock files (keep package-lock.json and yarn.lock)
+# package-lock.json
+# yarn.lock
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================================================
+# PROJECT SPECIFIC
+# ============================================================================
+# HealthFlow specific
+healthflow.db
+prescription_images/
+ocr_cache/
+ai_models/
+fhir_cache/
+
+# Migration files (keep structure, ignore data)
+migrations/versions/*.py
+!migrations/versions/__init__.py
+
+# Configuration overrides
+config/local.py
+config/development_local.py
+
+# ============================================================================
+# KEEP THESE FILES (NEGATED PATTERNS)
+# ============================================================================
+# Keep important configuration templates
+!.env.example
+!docker-compose.yml
+!Dockerfile
+!requirements.txt
+!package.json
+
+# Keep documentation
+!README.md
+!CHANGELOG.md
+!LICENSE
+!docs/
+
+# Keep deployment configurations
+!deployment/
+!.github/
+
+# Keep essential directories
+!src/
+!frontend/
+!tests/
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# This .gitignore file is designed to exclude:
+# 1. Sensitive data (secrets, credentials, personal data)
+# 2. Generated files (build artifacts, logs, caches)
+# 3. Environment-specific configurations
+# 4. IDE and OS specific files
+# 5. Temporary and backup files
+#
+# Always review before committing to ensure no sensitive data is included.
+# Use git-secrets or similar tools to prevent accidental commits of secrets.
+
