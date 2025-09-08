@@ -12,7 +12,7 @@ bcrypt==4.1.2
 cryptography==41.0.8
 
 # Database support
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.43
 
 # HTTP requests and utilities
 requests==2.31.0
