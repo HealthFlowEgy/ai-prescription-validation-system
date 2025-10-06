@@ -317,3 +317,17 @@ wheel>=0.38.0
 # 5. Use virtual environments or containers
 # 6. Document any custom patches or forks
 
+
+# ============================================================================
+# PRODUCTION ENHANCEMENTS - Added for Production Readiness
+# ============================================================================
+
+# Additional monitoring and metrics
+psutil==5.9.6
+
+# Production WSGI server dependencies
+gevent==23.9.1
+
+# Additional security
+itsdangerous==2.1.2
+

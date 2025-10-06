@@ -1,0 +1,124 @@
+# Multi-stage production Dockerfile for AI-Based Digital Prescription Validation System
+# Optimized for security and performance
+
+# =============================================================================
+# Stage 1: Builder - Install dependencies and compile
+# =============================================================================
+FROM python:3.11-slim as builder
+
+# Set build arguments
+ARG BUILD_DATE
+ARG GIT_COMMIT
+ARG APP_VERSION
+
+# Set environment variables for build
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies needed for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt /tmp/
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
+
+# =============================================================================
+# Stage 2: Runtime - Create minimal production image
+# =============================================================================
+FROM python:3.11-slim
+
+# Set metadata labels
+LABEL maintainer="HealthFlow Team" \
+      description="AI-Based Digital Prescription Validation System" \
+      version="${APP_VERSION}" \
+      build_date="${BUILD_DATE}" \
+      git_commit="${GIT_COMMIT}"
+
+# Set build arguments (same as builder)
+ARG BUILD_DATE
+ARG GIT_COMMIT
+ARG APP_VERSION=1.0.0
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_ENV=production \
+    APP_VERSION=${APP_VERSION} \
+    BUILD_DATE=${BUILD_DATE} \
+    GIT_COMMIT=${GIT_COMMIT} \
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/app/src
+
+# Install runtime system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # PostgreSQL client library
+    libpq5 \
+    # Tesseract OCR
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    # Image processing libraries
+    libjpeg62-turbo \
+    libpng16-16 \
+    libtiff5 \
+    # PDF processing
+    poppler-utils \
+    # Utilities
+    curl \
+    ca-certificates \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN groupadd -r appuser && \
+    useradd -r -g appuser -u 1000 -d /app -s /sbin/nologin appuser
+
+# Create application directories
+RUN mkdir -p /app/src /app/uploads /app/data /app/logs /app/backups && \
+    chown -R appuser:appuser /app
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY --chown=appuser:appuser src/ /app/src/
+COPY --chown=appuser:appuser migrations/ /app/migrations/
+COPY --chown=appuser:appuser alembic.ini /app/
+
+# Copy entrypoint script
+COPY --chown=appuser:appuser docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Create volume mount points
+VOLUME ["/app/uploads", "/app/data", "/app/logs", "/app/backups"]
+
+# Switch to non-root user
+USER appuser
+
+# Expose application port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
+# Default command (can be overridden)
+CMD ["gunicorn", "--config", "gunicorn_config.py", "src.main:app"]
