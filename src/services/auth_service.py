@@ -11,6 +11,8 @@ from typing import Optional, Dict, Tuple
 from functools import wraps
 from flask import request, jsonify, current_app
 from models.user import User, db
+from utils.password_validator import PasswordValidator
+from utils.token_manager import get_token_manager
 
 
 class AuthService:
@@ -62,7 +64,7 @@ class AuthService:
     @staticmethod
     def validate_password_strength(password: str) -> Tuple[bool, str]:
         """
-        Validate password strength requirements
+        Validate password strength using OWASP-compliant validator
         
         Args:
             password: Plain text password to validate
@@ -70,22 +72,8 @@ class AuthService:
         Returns:
             Tuple of (is_valid, message)
         """
-        if len(password) < 8:
-            return False, "Password must be at least 8 characters long"
-        
-        if not any(c.isupper() for c in password):
-            return False, "Password must contain at least one uppercase letter"
-        
-        if not any(c.islower() for c in password):
-            return False, "Password must contain at least one lowercase letter"
-        
-        if not any(c.isdigit() for c in password):
-            return False, "Password must contain at least one digit"
-        
-        if not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password):
-            return False, "Password must contain at least one special character"
-        
-        return True, "Password is strong"
+        result = PasswordValidator.validate_password_strength(password)
+        return result.is_valid, result.message
     
     @staticmethod
     def generate_token(
