@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import production configuration
 from config.production_simple import get_config
+from config.database_enforcer import validate_database_on_startup, get_database_status
 
 # Import models
 from models.user import db, User
@@ -74,6 +75,11 @@ def create_app(config_name=None):
     app.config.from_object(config)
     
     logger.info(f"Starting HealthFlow v2.1.0 in {config_name} mode")
+    
+    # Validate database configuration (CRITICAL FOR PRODUCTION)
+    validate_database_on_startup()
+    db_status = get_database_status()
+    logger.info(f"Database: {db_status['info']['type']} (Production Ready: {db_status['info']['production_ready']})")
     
     # Initialize extensions
     db.init_app(app)
