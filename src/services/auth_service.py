@@ -60,6 +60,34 @@ class AuthService:
             return False
     
     @staticmethod
+    def validate_password_strength(password: str) -> Tuple[bool, str]:
+        """
+        Validate password strength requirements
+        
+        Args:
+            password: Plain text password to validate
+            
+        Returns:
+            Tuple of (is_valid, message)
+        """
+        if len(password) < 8:
+            return False, "Password must be at least 8 characters long"
+        
+        if not any(c.isupper() for c in password):
+            return False, "Password must contain at least one uppercase letter"
+        
+        if not any(c.islower() for c in password):
+            return False, "Password must contain at least one lowercase letter"
+        
+        if not any(c.isdigit() for c in password):
+            return False, "Password must contain at least one digit"
+        
+        if not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password):
+            return False, "Password must contain at least one special character"
+        
+        return True, "Password is strong"
+    
+    @staticmethod
     def generate_token(
         user_id: int,
         role: str,
@@ -98,12 +126,13 @@ class AuthService:
         return token, expiration
     
     @staticmethod
-    def generate_refresh_token(user_id: int) -> Tuple[str, datetime]:
+    def generate_refresh_token(user_id: int, role: str = 'user') -> Tuple[str, datetime]:
         """
         Generate JWT refresh token
         
         Args:
             user_id: User ID
+            role: User role (default: 'user')
             
         Returns:
             Tuple of (token, expiration_datetime)
@@ -113,6 +142,7 @@ class AuthService:
         
         payload = {
             'user_id': user_id,
+            'role': role,
             'exp': expiration,
             'iat': datetime.utcnow(),
             'type': 'refresh'
