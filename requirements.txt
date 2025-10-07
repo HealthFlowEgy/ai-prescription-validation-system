@@ -331,3 +331,4 @@ gevent==23.9.1
 # Additional security
 itsdangerous==2.1.2
 
+pytest==7.4.3
