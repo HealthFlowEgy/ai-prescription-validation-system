@@ -2,7 +2,7 @@
 # Optimized for Vercel serverless deployment
 
 # Core Flask framework
-Flask==2.3.3
+Flask==3.1.2
 flask-cors==4.0.0
 Werkzeug==2.3.7
 
