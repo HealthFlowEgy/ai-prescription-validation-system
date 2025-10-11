@@ -350,3 +350,6 @@ cryptography>=41.0.0
 # MFA dependencies
 pyotp==2.9.0
 qrcode[pil]==7.4.2
+
+# Load testing dependencies
+locust==2.15.1
