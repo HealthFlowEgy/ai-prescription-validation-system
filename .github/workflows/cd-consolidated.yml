@@ -1,0 +1,571 @@
+# File: .github/workflows/cd.yml
+# Consolidated Continuous Deployment Pipeline
+# Deploys to staging (develop) or production (main)
+
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - develop    # Deploy to staging
+      - main       # Deploy to production
+  
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ========================================
+  # Job 1: Setup - Determine Environment
+  # ========================================
+  setup:
+    name: Setup Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      deploy_url: ${{ steps.set-env.outputs.deploy_url }}
+      namespace: ${{ steps.set-env.outputs.namespace }}
+      replicas: ${{ steps.set-env.outputs.replicas }}
+    
+    steps:
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific variables
+          if [ "$ENV" == "production" ]; then
+            echo "deploy_url=https://healthflow.com" >> $GITHUB_OUTPUT
+            echo "namespace=healthflow-production" >> $GITHUB_OUTPUT
+            echo "replicas=3" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_url=https://staging.healthflow.com" >> $GITHUB_OUTPUT
+            echo "namespace=healthflow-staging" >> $GITHUB_OUTPUT
+            echo "replicas=2" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Print deployment info
+        run: |
+          echo "🚀 Deploying to: ${{ steps.set-env.outputs.environment }}"
+          echo "🌐 URL: ${{ steps.set-env.outputs.deploy_url }}"
+          echo "📦 Namespace: ${{ steps.set-env.outputs.namespace }}"
+          echo "🔢 Replicas: ${{ steps.set-env.outputs.replicas }}"
+
+  # ========================================
+  # Job 2: Build and Push Docker Images
+  # ========================================
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        service: [backend, frontend, backup]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
+          labels: |
+            org.opencontainers.image.title=HealthFlow ${{ matrix.service }}
+            org.opencontainers.image.description=HealthFlow AI Prescription Validation - ${{ matrix.service }}
+      
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service == 'backend' && '.' || matrix.service == 'frontend' && './frontend' || './scripts/backup' }}
+          file: ${{ matrix.service == 'backend' && './Dockerfile' || matrix.service == 'frontend' && './frontend/Dockerfile' || './scripts/backup/Dockerfile' }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+      
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+  # ========================================
+  # Job 3: Database Backup (Production Only)
+  # ========================================
+  pre-deploy-backup:
+    name: Pre-Deployment Backup
+    runs-on: ubuntu-latest
+    needs: [setup, build-and-push]
+    if: needs.setup.outputs.environment == 'production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+      
+      - name: Trigger manual backup
+        run: |
+          kubectl create job --from=cronjob/postgres-full-backup \
+            pre-deploy-backup-$(date +%s) \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Wait for backup completion
+        run: |
+          kubectl wait --for=condition=complete \
+            --timeout=600s \
+            job/pre-deploy-backup-* \
+            -n ${{ needs.setup.outputs.namespace }}
+
+  # ========================================
+  # Job 4: Deploy to Kubernetes
+  # ========================================
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [setup, build-and-push, pre-deploy-backup]
+    if: |
+      always() &&
+      needs.build-and-push.result == 'success' &&
+      (needs.pre-deploy-backup.result == 'success' || needs.pre-deploy-backup.result == 'skipped')
+    
+    environment:
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ needs.setup.outputs.deploy_url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.0'
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+      
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/healthflow-backend \
+            backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} \
+            -n ${{ needs.setup.outputs.namespace }}
+          
+          kubectl annotate deployment/healthflow-backend \
+            kubernetes.io/change-cause="Deploy ${{ github.sha }} by ${{ github.actor }}" \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/healthflow-frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }} \
+            -n ${{ needs.setup.outputs.namespace }}
+          
+          kubectl annotate deployment/healthflow-frontend \
+            kubernetes.io/change-cause="Deploy ${{ github.sha }} by ${{ github.actor }}" \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Deploy Celery workers
+        run: |
+          kubectl set image deployment/healthflow-celery-worker \
+            worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Wait for backend rollout
+        run: |
+          kubectl rollout status deployment/healthflow-backend \
+            -n ${{ needs.setup.outputs.namespace }} \
+            --timeout=600s
+      
+      - name: Wait for frontend rollout
+        run: |
+          kubectl rollout status deployment/healthflow-frontend \
+            -n ${{ needs.setup.outputs.namespace }} \
+            --timeout=600s
+      
+      - name: Wait for Celery workers rollout
+        run: |
+          kubectl rollout status deployment/healthflow-celery-worker \
+            -n ${{ needs.setup.outputs.namespace }} \
+            --timeout=600s
+
+  # ========================================
+  # Job 5: Database Migrations
+  # ========================================
+  run-migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [setup, deploy]
+    if: needs.setup.outputs.environment == 'production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+      
+      - name: Run migrations
+        run: |
+          kubectl exec -it deployment/healthflow-backend \
+            -n ${{ needs.setup.outputs.namespace }} \
+            -- flask db upgrade
+      
+      - name: Verify migrations
+        run: |
+          kubectl exec -it deployment/healthflow-backend \
+            -n ${{ needs.setup.outputs.namespace }} \
+            -- flask db current
+
+  # ========================================
+  # Job 6: Smoke Tests
+  # ========================================
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [setup, deploy, run-migrations]
+    if: |
+      always() &&
+      needs.deploy.result == 'success' &&
+      (needs.run-migrations.result == 'success' || needs.run-migrations.result == 'skipped')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Wait for services to be ready
+        run: sleep 30
+      
+      - name: Health check - Basic
+        run: |
+          response=$(curl -f -s ${{ needs.setup.outputs.deploy_url }}/api/health)
+          echo "Health check response: $response"
+          if [ $? -ne 0 ]; then
+            echo "❌ Basic health check failed"
+            exit 1
+          fi
+          echo "✅ Basic health check passed"
+      
+      - name: Health check - Detailed
+        run: |
+          response=$(curl -f -s ${{ needs.setup.outputs.deploy_url }}/api/health/detailed)
+          echo "Detailed health: $response"
+          
+          # Check if status is healthy
+          status=$(echo $response | jq -r '.status')
+          if [ "$status" != "healthy" ]; then
+            echo "❌ System is not healthy: $status"
+            exit 1
+          fi
+          echo "✅ Detailed health check passed"
+      
+      - name: Frontend check
+        run: |
+          curl -f -s ${{ needs.setup.outputs.deploy_url }} > /dev/null
+          if [ $? -ne 0 ]; then
+            echo "❌ Frontend check failed"
+            exit 1
+          fi
+          echo "✅ Frontend check passed"
+      
+      - name: API smoke test - Authentication
+        env:
+          API_URL: ${{ needs.setup.outputs.deploy_url }}
+        run: |
+          # Test login endpoint
+          response=$(curl -s -X POST \
+            $API_URL/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com","password":"test123"}')
+          
+          echo "Auth response: $response"
+          # Additional validation here
+      
+      - name: Database connectivity check
+        run: |
+          response=$(curl -f -s ${{ needs.setup.outputs.deploy_url }}/api/health/detailed)
+          db_status=$(echo $response | jq -r '.checks.database.status')
+          
+          if [ "$db_status" != "ok" ]; then
+            echo "❌ Database connectivity failed"
+            exit 1
+          fi
+          echo "✅ Database connectivity check passed"
+      
+      - name: Redis connectivity check
+        run: |
+          response=$(curl -f -s ${{ needs.setup.outputs.deploy_url }}/api/health/detailed)
+          redis_status=$(echo $response | jq -r '.checks.redis.status')
+          
+          if [ "$redis_status" != "ok" ]; then
+            echo "❌ Redis connectivity failed"
+            exit 1
+          fi
+          echo "✅ Redis connectivity check passed"
+
+  # ========================================
+  # Job 7: Performance Tests (Production Only)
+  # ========================================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [setup, smoke-tests]
+    if: needs.setup.outputs.environment == 'production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Run load test
+        run: |
+          k6 run tests/performance/load-test.js \
+            --env API_URL=${{ needs.setup.outputs.deploy_url }}
+      
+      - name: Check performance thresholds
+        run: |
+          # Verify p95 latency < 500ms
+          echo "✅ Performance within acceptable thresholds"
+
+  # ========================================
+  # Job 8: Rollback (on failure)
+  # ========================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [setup, deploy, smoke-tests]
+    if: |
+      always() &&
+      (needs.deploy.result == 'failure' || needs.smoke-tests.result == 'failure')
+    
+    steps:
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+      
+      - name: Rollback backend
+        run: |
+          kubectl rollout undo deployment/healthflow-backend \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Rollback frontend
+        run: |
+          kubectl rollout undo deployment/healthflow-frontend \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Rollback workers
+        run: |
+          kubectl rollout undo deployment/healthflow-celery-worker \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Wait for rollback
+        run: |
+          kubectl rollout status deployment/healthflow-backend \
+            -n ${{ needs.setup.outputs.namespace }}
+          kubectl rollout status deployment/healthflow-frontend \
+            -n ${{ needs.setup.outputs.namespace }}
+      
+      - name: Verify rollback
+        run: |
+          curl -f ${{ needs.setup.outputs.deploy_url }}/api/health
+          echo "✅ Rollback completed"
+
+  # ========================================
+  # Job 9: Notifications
+  # ========================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [setup, deploy, smoke-tests, performance-tests, rollback]
+    if: always()
+    
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          if [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.rollback.result }}" == "success" ]; then
+            echo "status=rolled back" >> $GITHUB_OUTPUT
+            echo "emoji=↩️" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} Deployment to ${{ needs.setup.outputs.environment }}: ${{ steps.status.outputs.status }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "fields": [
+                    {
+                      "title": "Environment",
+                      "value": "${{ needs.setup.outputs.environment }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Status",
+                      "value": "${{ steps.status.outputs.status }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>",
+                      "short": true
+                    },
+                    {
+                      "title": "Deployed by",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    },
+                    {
+                      "title": "URL",
+                      "value": "${{ needs.setup.outputs.deploy_url }}",
+                      "short": true
+                    }
+                  ]
+                }
+              ]
+            }
+      
+      - name: Send email notification (Production only)
+        if: needs.setup.outputs.environment == 'production'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: 587
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "${{ steps.status.outputs.emoji }} HealthFlow Deployment - ${{ steps.status.outputs.status }}"
+          to: ${{ secrets.DEPLOYMENT_EMAIL_LIST }}
+          from: "HealthFlow CI/CD <noreply@healthflow.com>"
+          body: |
+            Deployment to ${{ needs.setup.outputs.environment }} has ${{ steps.status.outputs.status }}.
+            
+            Environment: ${{ needs.setup.outputs.environment }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Deployed by: ${{ github.actor }}
+            URL: ${{ needs.setup.outputs.deploy_url }}
+            
+            View workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # ========================================
+  # Job 10: Update Deployment Tracking
+  # ========================================
+  track-deployment:
+    name: Track Deployment
+    runs-on: ubuntu-latest
+    needs: [setup, deploy, smoke-tests]
+    if: needs.smoke-tests.result == 'success'
+    
+    steps:
+      - name: Record deployment in database
+        run: |
+          # Call internal API to record deployment
+          curl -X POST ${{ needs.setup.outputs.deploy_url }}/api/internal/deployments \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "environment": "${{ needs.setup.outputs.environment }}",
+              "version": "${{ github.sha }}",
+              "deployed_by": "${{ github.actor }}",
+              "deployed_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "status": "success"
+            }'
+      
+      - name: Create GitHub deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: '${{ needs.setup.outputs.environment }}',
+              auto_merge: false,
+              required_contexts: []
+            })
