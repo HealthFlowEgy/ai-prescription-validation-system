@@ -209,7 +209,7 @@ class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     prescription_id = db.Column(db.Integer, db.ForeignKey('prescriptions.id'))
     
     # Audit Information
