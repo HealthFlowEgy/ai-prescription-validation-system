@@ -1,0 +1,32 @@
+# Istio Gateway for external traffic
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: healthflow-gateway
+  namespace: healthflow
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  # HTTP (redirect to HTTPS)
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.healthflow.com"
+    tls:
+      httpsRedirect: true
+  
+  # HTTPS
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*.healthflow.com"
+    tls:
+      mode: SIMPLE
+      credentialName: healthflow-tls
+

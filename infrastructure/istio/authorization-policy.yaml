@@ -1,0 +1,35 @@
+# Authorization policies for service-to-service communication
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-policy
+  namespace: healthflow
+spec:
+  selector:
+    matchLabels:
+      app: healthflow-api
+  
+  action: ALLOW
+  
+  rules:
+  # Allow from frontend
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/healthflow/sa/healthflow-frontend
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        paths: ["/api/*"]
+  
+  # Allow from Celery workers
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/healthflow/sa/healthflow-celery
+    to:
+    - operation:
+        methods: ["GET", "POST"]
+        paths: ["/internal/*"]
+

@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: partition-management
+  namespace: healthflow
+spec:
+  # Run on 1st of every month at 2 AM
+  schedule: "0 2 1 * *"
+  
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: partition-manager
+            image: healthflow/partition-manager:latest
+            env:
+            - name: POSTGRES_HOST
+              value: postgresql-ha
+            - name: POSTGRES_DATABASE
+              value: healthflow
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-credentials
+                  key: password
+            
+            command:
+            - python
+            - /scripts/manage_partitions.py
+          
+          restartPolicy: OnFailure
+

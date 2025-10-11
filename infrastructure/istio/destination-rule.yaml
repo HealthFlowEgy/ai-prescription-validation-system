@@ -1,0 +1,43 @@
+# Istio Destination Rule for load balancing
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: healthflow-api
+  namespace: healthflow
+spec:
+  host: healthflow-api
+  
+  # Traffic Policy
+  trafficPolicy:
+    # Load balancing
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: x-user-id
+    
+    # Connection pool
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    
+    # Outlier detection (circuit breaker)
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+  
+  # Subsets for versions
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+

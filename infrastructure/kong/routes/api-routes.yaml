@@ -1,0 +1,49 @@
+# Kong Routes Configuration
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: healthflow-api
+  namespace: healthflow
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/strip-path: "true"
+    konghq.com/protocols: https,http
+    konghq.com/https-redirect-status-code: "301"
+    konghq.com/plugins: jwt-auth,cors,global-rate-limit
+spec:
+  rules:
+  - host: api.healthflow.com
+    http:
+      paths:
+      # Public endpoints (no auth)
+      - path: /health
+        pathType: Prefix
+        backend:
+          service:
+            name: healthflow-api
+            port:
+              number: 5000
+      
+      - path: /api/auth/login
+        pathType: Prefix
+        backend:
+          service:
+            name: healthflow-api
+            port:
+              number: 5000
+      
+      # Protected endpoints (require auth)
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: healthflow-api
+            port:
+              number: 5000
+  
+  tls:
+  - hosts:
+    - api.healthflow.com
+    secretName: healthflow-tls
+
