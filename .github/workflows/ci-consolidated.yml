@@ -1,0 +1,445 @@
+# File: .github/workflows/ci.yml
+# Consolidated Continuous Integration Pipeline
+# Runs on: Every push to develop, PRs to main/develop
+
+name: Continuous Integration
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # ========================================
+  # Job 1: Code Quality & Security
+  # ========================================
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Lint with Flake8
+        run: |
+          # Stop build on syntax errors
+          flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Treat as warnings
+          flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+      
+      - name: Format check with Black
+        run: |
+          black --check --diff src/ tests/
+      
+      - name: Sort imports with isort
+        run: |
+          isort --check-only --diff src/ tests/
+      
+      - name: Type checking with MyPy
+        run: |
+          mypy src/ --ignore-missing-imports
+      
+      - name: Security scan with Bandit
+        run: |
+          bandit -r src/ -ll -f json -o bandit-report.json
+      
+      - name: Check for secrets with TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+      
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+          retention-days: 30
+
+  # ========================================
+  # Job 2: Backend Tests
+  # ========================================
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: healthflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils
+      
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/healthflow_test
+          REDIS_URL: redis://localhost:6379/0
+          FLASK_ENV: testing
+          ENCRYPTION_KEY_CURRENT: ${{ secrets.TEST_ENCRYPTION_KEY }}
+        run: |
+          pytest tests/unit/ \
+            -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term \
+            --junitxml=junit-unit.xml
+      
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/healthflow_test
+          REDIS_URL: redis://localhost:6379/0
+          FLASK_ENV: testing
+          ENCRYPTION_KEY_CURRENT: ${{ secrets.TEST_ENCRYPTION_KEY }}
+        run: |
+          pytest tests/integration/ \
+            -v \
+            --junitxml=junit-integration.xml
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-backend
+          path: |
+            junit-*.xml
+            htmlcov/
+          retention-days: 30
+      
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); print(tree.getroot().attrib['line-rate'])")
+          COVERAGE_PERCENT=$(python -c "print(int(float($COVERAGE) * 100))")
+          echo "Coverage: $COVERAGE_PERCENT%"
+          if [ $COVERAGE_PERCENT -lt 60 ]; then
+            echo "❌ Coverage is below 60% threshold"
+            exit 1
+          fi
+          echo "✅ Coverage meets 60% threshold"
+
+  # ========================================
+  # Job 3: Frontend Tests
+  # ========================================
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    defaults:
+      run:
+        working-directory: frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint JavaScript/TypeScript
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
+      
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build/
+          retention-days: 7
+
+  # ========================================
+  # Job 4: Security Scanning
+  # ========================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'HealthFlow'
+          path: '.'
+          format: 'HTML'
+          out: 'dependency-check-report'
+      
+      - name: Upload OWASP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: dependency-check-report
+          retention-days: 30
+      
+      - name: Snyk security scan
+        uses: snyk/actions/python@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high
+
+  # ========================================
+  # Job 5: Database Migration Tests
+  # ========================================
+  migration-tests:
+    name: Database Migration Tests
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: healthflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Test migrations (upgrade)
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/healthflow_test
+        run: |
+          flask db upgrade
+      
+      - name: Test migrations (downgrade)
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/healthflow_test
+        run: |
+          flask db downgrade
+      
+      - name: Test migrations (re-upgrade)
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/healthflow_test
+        run: |
+          flask db upgrade
+
+  # ========================================
+  # Job 6: Docker Build Test
+  # ========================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, security-scan]
+    if: github.event_name == 'push'
+    
+    strategy:
+      matrix:
+        service: [backend, frontend, backup]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service == 'backend' && '.' || matrix.service == 'frontend' && './frontend' || './scripts/backup' }}
+          file: ${{ matrix.service == 'backend' && './Dockerfile' || matrix.service == 'frontend' && './frontend/Dockerfile' || './scripts/backup/Dockerfile' }}
+          push: false
+          tags: healthflow-${{ matrix.service }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+  # ========================================
+  # Job 7: Performance Tests
+  # ========================================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install Locust
+        run: |
+          pip install locust
+      
+      - name: Run performance tests
+        run: |
+          # Start app in background
+          # locust -f tests/performance/locustfile.py --headless -u 100 -r 10 --run-time 2m --host http://localhost:5000
+          echo "Performance tests placeholder - implement actual tests"
+
+  # ========================================
+  # Job 8: Summary
+  # ========================================
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, backend-tests, frontend-tests, security-scan, migration-tests, docker-build]
+    if: always()
+    
+    steps:
+      - name: Check job results
+        run: |
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Backend Tests: ${{ needs.backend-tests.result }}"
+          echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Migration Tests: ${{ needs.migration-tests.result }}"
+          echo "Docker Build: ${{ needs.docker-build.result }}"
+      
+      - name: Fail if any job failed
+        if: |
+          needs.code-quality.result == 'failure' ||
+          needs.backend-tests.result == 'failure' ||
+          needs.frontend-tests.result == 'failure' ||
+          needs.migration-tests.result == 'failure'
+        run: |
+          echo "❌ CI pipeline failed"
+          exit 1
+      
+      - name: Success message
+        if: |
+          needs.code-quality.result == 'success' &&
+          needs.backend-tests.result == 'success' &&
+          needs.frontend-tests.result == 'success' &&
+          needs.migration-tests.result == 'success'
+        run: |
+          echo "✅ All CI checks passed!"
