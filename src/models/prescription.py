@@ -1,4 +1,4 @@
-from src.models.user import db
+from models.database import db
 from datetime import datetime
 from enum import Enum
 import json

@@ -1,0 +1,97 @@
+# Vercel Ignore File - Frontend Only Deployment
+
+# Backend files (not needed for frontend-only deployment)
+src/
+api/
+requirements*.txt
+*.py
+__pycache__/
+*.pyc
+
+# Development files
+.env.local
+.env.development
+.env.test
+*.log
+logs/
+temp/
+tmp/
+
+# Node modules (handled by Vercel)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+backups/
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Kubernetes files
+deployment/kubernetes/
+deployment/terraform/
+deployment/docker/
+
+# CI/CD files
+.github/workflows/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files and coverage
+coverage/
+.nyc_output
+test-results/
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Monitoring and infrastructure
+monitoring/
+prometheus_data/
+grafana_data/
+
+# Large files and uploads
+uploads/
+media/
+static/uploads/
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+ssl/
+certs/
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Temporary files
+*.tmp
+*.temp
+*~
+*.bak
+

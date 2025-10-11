@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healthflow-production
+  labels:
+    name: healthflow-production
+    environment: production
+    app: healthflow
+    version: v2.0.0
+  annotations:
+    description: "Enhanced HealthFlow AI Digital Prescription System - Production Environment"
+    contact: "dev@healthflow.egypt.gov"
+    documentation: "https://docs.healthflow.egypt.gov"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healthflow-staging
+  labels:
+    name: healthflow-staging
+    environment: staging
+    app: healthflow
+    version: v2.0.0
+  annotations:
+    description: "Enhanced HealthFlow AI Digital Prescription System - Staging Environment"
+    contact: "dev@healthflow.egypt.gov"
+    documentation: "https://docs.healthflow.egypt.gov"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healthflow-development
+  labels:
+    name: healthflow-development
+    environment: development
+    app: healthflow
+    version: v2.0.0
+  annotations:
+    description: "Enhanced HealthFlow AI Digital Prescription System - Development Environment"
+    contact: "dev@healthflow.egypt.gov"
+    documentation: "https://docs.healthflow.egypt.gov"
+

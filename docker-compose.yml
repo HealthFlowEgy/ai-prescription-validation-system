@@ -1,104 +1,390 @@
+# Enhanced HealthFlow AI Digital Prescription System v2.0
+# Docker Compose Configuration
+# International Best Practices Implementation
+
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./uploads:/app/uploads
-      - ./data:/app/data
-      - ./logs:/app/logs
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=sqlite:///data/production.db
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+  # ============================================================================
+  # DATABASE SERVICES
+  # ============================================================================
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: healthflow-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: healthflow
+      POSTGRES_USER: healthflow
+      POSTGRES_PASSWORD: healthflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - healthflow-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD-SHELL", "pg_isready -U healthflow -d healthflow"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    depends_on:
-      - redis
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./logs/nginx:/var/log/nginx
-    depends_on:
-      - app
-    restart: unless-stopped
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    container_name: healthflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass healthflow
     volumes:
       - redis_data:/data
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-
-  # Optional: PostgreSQL for production use
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=prescription_validator
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
-    restart: unless-stopped
-    profiles:
-      - postgres
+      - "6379:6379"
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  # Optional: Monitoring with Prometheus
+  # ============================================================================
+  # BACKEND SERVICES
+  # ============================================================================
+  
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: healthflow-backend
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://healthflow:healthflow@postgres:5432/healthflow
+      - REDIS_URL=redis://:healthflow@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FHIR_SERVER_URL=http://fhir-server:8080/fhir
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ============================================================================
+  # TASK QUEUE
+  # ============================================================================
+  
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: healthflow-celery-worker
+    restart: unless-stopped
+    command: celery -A src.main.celery worker --loglevel=info --concurrency=4
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://healthflow:healthflow@postgres:5432/healthflow
+      - REDIS_URL=redis://:healthflow@redis:6379/0
+      - CELERY_BROKER_URL=redis://:healthflow@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:healthflow@redis:6379/3
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "celery", "-A", "src.main.celery", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: healthflow-celery-beat
+    restart: unless-stopped
+    command: celery -A src.main.celery beat --loglevel=info
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://healthflow:healthflow@postgres:5432/healthflow
+      - REDIS_URL=redis://:healthflow@redis:6379/0
+      - CELERY_BROKER_URL=redis://:healthflow@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:healthflow@redis:6379/3
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: healthflow-flower
+    restart: unless-stopped
+    command: celery -A src.main.celery flower --port=5555
+    environment:
+      - CELERY_BROKER_URL=redis://:healthflow@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:healthflow@redis:6379/3
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - healthflow-network
+
+  # ============================================================================
+  # FRONTEND SERVICE
+  # ============================================================================
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: healthflow-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api/v1
+      - REACT_APP_FHIR_URL=http://localhost:8080/fhir
+      - REACT_APP_ENVIRONMENT=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================================================
+  # FHIR SERVER
+  # ============================================================================
+  
+  fhir-server:
+    image: hapiproject/hapi:latest
+    container_name: healthflow-fhir-server
+    restart: unless-stopped
+    environment:
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/healthflow
+      - spring.datasource.username=healthflow
+      - spring.datasource.password=healthflow
+      - spring.datasource.driverClassName=org.postgresql.Driver
+      - spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQL10Dialect
+      - hapi.fhir.fhir_version=R4
+      - hapi.fhir.subscription.resthook_enabled=true
+      - hapi.fhir.allow_multiple_delete=true
+      - hapi.fhir.allow_external_references=true
+      - hapi.fhir.cors.allowed_origin_patterns=*
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/fhir/metadata"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # ============================================================================
+  # MONITORING SERVICES
+  # ============================================================================
+  
   prometheus:
     image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+    container_name: healthflow-prometheus
+    restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-    restart: unless-stopped
-    profiles:
-      - monitoring
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - healthflow-network
 
-  # Optional: Grafana for visualization
   grafana:
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
+    container_name: healthflow-grafana
+    restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - healthflow-network
+
+  # ============================================================================
+  # REVERSE PROXY & LOAD BALANCER
+  # ============================================================================
+  
+  nginx:
+    image: nginx:alpine
+    container_name: healthflow-nginx
     restart: unless-stopped
-    profiles:
-      - monitoring
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./deployment/nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # BACKUP SERVICE
+  # ============================================================================
+  
+  backup:
+    build:
+      context: ./deployment/backup
+      dockerfile: Dockerfile
+    container_name: healthflow-backup
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=healthflow
+      - POSTGRES_USER=healthflow
+      - POSTGRES_PASSWORD=healthflow
+      - BACKUP_SCHEDULE=0 2 * * *
+      - BACKUP_RETENTION_DAYS=90
+      - ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+    volumes:
+      - ./backups:/backups
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
 
 volumes:
-  redis_data:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
   prometheus_data:
+    driver: local
   grafana_data:
+    driver: local
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
 
 networks:
-  default:
+  healthflow-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# DEVELOPMENT OVERRIDE
+# ============================================================================
+# For development, create docker-compose.override.yml with:
+# 
+# version: '3.8'
+# services:
+#   backend:
+#     environment:
+#       - FLASK_ENV=development
+#       - DEBUG=true
+#     volumes:
+#       - .:/app
+#     command: python src/main.py
+#   
+#   frontend:
+#     environment:
+#       - REACT_APP_API_URL=http://localhost:5000/api/v1
+#     volumes:
+#       - ./frontend:/app
+#     command: npm run dev
+
+# ============================================================================
+# PRODUCTION NOTES
+# ============================================================================
+# 1. Use external managed databases in production
+# 2. Configure proper SSL certificates
+# 3. Set up external monitoring and alerting
+# 4. Use secrets management for sensitive data
+# 5. Configure proper backup and disaster recovery
+# 6. Set up log aggregation and analysis
+# 7. Configure auto-scaling based on load
+# 8. Implement proper security scanning
+# 9. Set up CI/CD pipeline integration
+# 10. Configure health checks and readiness probes
 

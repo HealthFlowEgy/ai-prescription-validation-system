@@ -1,0 +1,18 @@
+# Donut OCR Dependencies for Medical Prescription Recognition
+# Model: chinmays18/medical-prescription-ocr
+
+# Core dependencies
+transformers>=4.35.0
+torch>=2.0.0
+torchvision>=0.15.0
+pillow>=10.0.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+accelerate>=0.24.0
+
+# Optional but recommended
+albumentations>=1.3.0  # Image augmentation
+gradio>=4.0.0  # For testing UI (optional)
+
+# Hugging Face Hub
+huggingface-hub>=0.19.0

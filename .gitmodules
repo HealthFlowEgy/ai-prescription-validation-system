@@ -1,0 +1,3 @@
+[submodule "src/ml_models/medical_ocr"]
+	path = src/ml_models/medical_ocr
+	url = https://github.com/HealthFlowEgy/Medical-Prescription-OCR.git
