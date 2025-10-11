@@ -114,6 +114,14 @@ def create_app(config_name=None):
     except Exception as e:
         logger.warning(f"Could not register auth routes: {e}")
     
+    # Register clinical validation routes
+    try:
+        from routes.clinical_validation import clinical_bp
+        app.register_blueprint(clinical_bp, url_prefix='/api/clinical')
+        logger.info("Clinical validation routes registered")
+    except Exception as e:
+        logger.warning(f"Could not register clinical validation routes: {e}")
+    
     # Try to register existing routes with fixed imports
     try:
         # Import and fix prescription routes
