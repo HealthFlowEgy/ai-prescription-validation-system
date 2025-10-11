@@ -1,0 +1,361 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with Replication
+  postgres-primary:
+    image: postgres:15-alpine
+    container_name: healthflow-postgres-primary
+    environment:
+      POSTGRES_DB: healthflow
+      POSTGRES_USER: healthflow_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+      # Enable WAL archiving for replication
+      POSTGRES_MAX_WAL_SENDERS: 3
+      POSTGRES_WAL_LEVEL: replica
+    volumes:
+      - postgres-data-primary:/var/lib/postgresql/data
+      - ./backups:/backups
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healthflow_user -d healthflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # PostgreSQL Replica (Read-only)
+  postgres-replica:
+    image: postgres:15-alpine
+    container_name: healthflow-postgres-replica
+    environment:
+      POSTGRES_USER: healthflow_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGUSER: healthflow_user
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    command: |
+      bash -c "
+      until pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U healthflow_user -v -P; do
+        echo 'Waiting for primary to be ready...'
+        sleep 5
+      done
+      echo 'standby_mode = on' > /var/lib/postgresql/data/standby.signal
+      postgres
+      "
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    volumes:
+      - postgres-data-replica:/var/lib/postgresql/data
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # Redis Cluster for Caching
+  redis-master:
+    image: redis:7-alpine
+    container_name: healthflow-redis-master
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis-data-master:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis-replica:
+    image: redis:7-alpine
+    container_name: healthflow-redis-replica
+    command: redis-server --requirepass ${REDIS_PASSWORD} --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD}
+    depends_on:
+      - redis-master
+    volumes:
+      - redis-data-replica:/data
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # MLflow Tracking Server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.8.0
+    container_name: healthflow-mlflow
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://healthflow_user:${POSTGRES_PASSWORD}@postgres-primary:5432/mlflow
+      --default-artifact-root s3://${S3_BUCKET}/mlflow-artifacts
+      --host 0.0.0.0
+      --port 5000
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION}
+    ports:
+      - "5001:5000"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: healthflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - healthflow-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Celery Workers for Async Processing
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: healthflow-celery-worker
+    command: celery -A tasks worker --loglevel=info --concurrency=4
+    environment:
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis-master:6379/1
+      DATABASE_URL: postgresql://healthflow_user:${POSTGRES_PASSWORD}@postgres-primary:5432/healthflow
+      PHI_ENCRYPTION_KEY: ${PHI_ENCRYPTION_KEY}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      - postgres-primary
+      - redis-master
+      - rabbitmq
+      - mlflow
+    volumes:
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  # Flask API Application (Multiple Instances)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthflow-api
+    command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --access-logfile - enhanced_api:app
+    environment:
+      DATABASE_URL: postgresql://healthflow_user:${POSTGRES_PASSWORD}@postgres-primary:5432/healthflow
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-master:6379/0
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      PHI_ENCRYPTION_KEY: ${PHI_ENCRYPTION_KEY}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      FLASK_ENV: production
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis-master:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    volumes:
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: healthflow-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - api
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: healthflow-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # Grafana - Metrics Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: healthflow-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: healthflow-jaeger
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: :9411
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # UI
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # ELK Stack - Log Aggregation
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: healthflow-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: healthflow-logstash
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./logs:/logs:ro
+    depends_on:
+      - elasticsearch
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: healthflow-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+
+  # Backup Service
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    container_name: healthflow-backup
+    environment:
+      POSTGRES_HOST: postgres-primary
+      POSTGRES_USER: healthflow_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: healthflow
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION}
+    volumes:
+      - ./backups:/backups
+      - ./backup-scripts:/scripts:ro
+    networks:
+      - healthflow-network
+    restart: unless-stopped
+    # Run backup daily at 2 AM
+    entrypoint: /scripts/backup-cron.sh
+
+networks:
+  healthflow-network:
+    driver: bridge
+
+volumes:
+  postgres-data-primary:
+    driver: local
+  postgres-data-replica:
+    driver: local
+  redis-data-master:
+    driver: local
+  redis-data-replica:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  elasticsearch-data:
+    driver: local
