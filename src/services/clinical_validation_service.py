@@ -14,9 +14,14 @@ from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
-from src.models.database import db
-from src.models.prescription import Prescription, ValidationStatus
-from src.services.audit_service import AuditService, AuditAction, AuditSeverity
+try:
+    from models.database import db
+    from models.prescription import Prescription, ValidationStatus
+    from services.audit_service import AuditService, AuditAction, AuditSeverity
+except ImportError:
+    from src.models.database import db
+    from src.models.prescription import Prescription, ValidationStatus
+    from src.services.audit_service import AuditService, AuditAction, AuditSeverity
 import logging
 
 logger = logging.getLogger(__name__)

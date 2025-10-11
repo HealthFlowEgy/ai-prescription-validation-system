@@ -10,16 +10,29 @@ Date: 2025-10-14
 from flask import Blueprint, request, jsonify, g
 from datetime import datetime, timedelta
 from typing import Optional
-from src.services.clinical_validation_service import (
-    ClinicalValidationService,
-    PharmacistReview,
-    ReviewStatus,
-    ReviewPriority,
-    SafetySeverity
-)
-from src.models.prescription import Prescription
-from src.services.auth_service import require_auth, require_role
-from src.utils.validators import validate_request
+try:
+    from services.clinical_validation_service import (
+        ClinicalValidationService,
+        PharmacistReview,
+        ReviewStatus,
+        ReviewPriority,
+        SafetySeverity
+    )
+    from models.prescription import Prescription
+    from services.auth_service import require_auth, require_role
+    from utils.validators import validate_request
+except ImportError:
+    # Fallback for different import paths
+    from src.services.clinical_validation_service import (
+        ClinicalValidationService,
+        PharmacistReview,
+        ReviewStatus,
+        ReviewPriority,
+        SafetySeverity
+    )
+    from src.models.prescription import Prescription
+    from src.services.auth_service import require_auth, require_role
+    from src.utils.validators import validate_request
 from pydantic import BaseModel, Field, validator
 from enum import Enum
 import logging
