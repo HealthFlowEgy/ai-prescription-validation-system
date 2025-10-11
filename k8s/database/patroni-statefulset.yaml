@@ -1,0 +1,977 @@
+# Sprint 2: Database Resilience & Observability
+## HealthFlow AI Prescription Validation System
+
+**Sprint Duration:** 2 weeks (October 28 - November 10, 2025)  
+**Sprint Goal:** Implement PostgreSQL high availability, distributed tracing, and comprehensive observability to achieve 99.9% uptime
+
+**Team Capacity:** 5 developers × 10 days = 50 story points available
+
+---
+
+## 🎯 Sprint Objectives
+
+Building on Sprint 1's security foundation, Sprint 2 focuses on **production resilience and observability**:
+
+1. **PostgreSQL High Availability** - Primary-replica setup with automated failover
+2. **Distributed Tracing** - OpenTelemetry for request tracing across services
+3. **Centralized Logging** - ELK Stack for log aggregation and analysis
+4. **Enhanced Monitoring** - Prometheus + Grafana dashboards
+5. **Connection Pooling** - PgBouncer for database connection management
+6. **Circuit Breakers** - Resilience patterns for external service calls
+
+**Success Criteria:**
+- ✅ Database uptime: 99.9% (max 43 minutes downtime/month)
+- ✅ Automatic failover < 30 seconds
+- ✅ End-to-end request tracing operational
+- ✅ All logs centralized and searchable
+- ✅ Real-time monitoring dashboards live
+- ✅ Zero data loss during failover
+
+---
+
+## 📋 Sprint Backlog
+
+### Priority 1: PostgreSQL High Availability (20 points)
+
+#### US-2.1: PostgreSQL Streaming Replication Setup
+**Story Points:** 8  
+**Priority:** 🔴 CRITICAL  
+**Owner:** DevOps Team + Backend Lead
+
+**User Story:**  
+As a DevOps engineer, I need PostgreSQL configured in primary-replica mode with streaming replication so that we have zero data loss and can survive database server failures.
+
+**Acceptance Criteria:**
+- [ ] Primary PostgreSQL instance configured
+- [ ] 2 replica instances with streaming replication
+- [ ] Replication lag < 1 second
+- [ ] Replicas readable for reporting queries
+- [ ] Replication monitoring in place
+- [ ] Documentation for replica promotion
+
+**Technical Implementation:**
+
+```yaml
+# kubernetes/postgres-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: healthflow-production
+spec:
+  serviceName: postgres
+  replicas: 3  # 1 primary + 2 replicas
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: POSTGRES_DB
+          value: healthflow
+        - name: POSTGRES_INITDB_ARGS
+          value: "--data-checksums"
+        
+        # Replication configuration
+        - name: POSTGRES_REPLICA_MODE
+          value: "replica"
+        - name: POSTGRES_PRIMARY_HOST
+          value: "postgres-0.postgres.healthflow-production.svc.cluster.local"
+        - name: POSTGRES_REPLICATION_USER
+          value: "replicator"
+        - name: POSTGRES_REPLICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: replication-password
+        
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql
+        
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      
+      volumes:
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+# PostgreSQL Primary Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: healthflow-production
+data:
+  postgresql.conf: |
+    # Replication Configuration
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    hot_standby = on
+    hot_standby_feedback = on
+    
+    # Performance Tuning
+    shared_buffers = 1GB
+    effective_cache_size = 3GB
+    maintenance_work_mem = 256MB
+    work_mem = 64MB
+    
+    # Checkpoint Configuration
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    
+    # Logging
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = '/var/log/postgresql'
+    log_filename = 'postgresql-%Y-%m-%d.log'
+    log_rotation_age = 1d
+    log_rotation_size = 100MB
+    log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+    log_timezone = 'UTC'
+    
+    # Connection Settings
+    max_connections = 200
+    
+    # Query Performance
+    random_page_cost = 1.1  # For SSD
+    effective_io_concurrency = 200
+    
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    local   all             all                                     trust
+    host    all             all             127.0.0.1/32            md5
+    host    all             all             ::1/128                 md5
+    host    all             all             10.0.0.0/8              md5
+    host    replication     replicator      10.0.0.0/8              md5
+
+---
+# Service for Primary (Write)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-primary
+  namespace: healthflow-production
+spec:
+  selector:
+    app: postgres
+    role: primary
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Service for Replicas (Read)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica
+  namespace: healthflow-production
+spec:
+  selector:
+    app: postgres
+    role: replica
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+```
+
+---
+
+#### US-2.2: Patroni for Automated Failover
+**Story Points:** 8  
+**Priority:** 🔴 CRITICAL  
+**Owner:** DevOps Team
+
+**User Story:**  
+As a DevOps engineer, I need automated failover when the primary database fails so that the system remains available without manual intervention.
+
+**Acceptance Criteria:**
+- [ ] Patroni deployed on all PostgreSQL nodes
+- [ ] etcd cluster for distributed consensus
+- [ ] Automatic failover < 30 seconds
+- [ ] Health checks every 5 seconds
+- [ ] Failover tested and verified
+- [ ] Monitoring dashboard for cluster status
+
+**Technical Implementation:**
+
+```yaml
+# kubernetes/patroni-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: patroni
+  namespace: healthflow-production
+spec:
+  serviceName: patroni
+  replicas: 3
+  selector:
+    matchLabels:
+      app: patroni
+  template:
+    metadata:
+      labels:
+        app: patroni
+    spec:
+      serviceAccountName: patroni
+      containers:
+      - name: patroni
+        image: patroni/patroni:3.2.0
+        ports:
+        - containerPort: 5432
+          name: postgres
+        - containerPort: 8008
+          name: patroni
+        env:
+        - name: PATRONI_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: PATRONI_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: PATRONI_KUBERNETES_LABELS
+          value: "{app: patroni}"
+        - name: PATRONI_SUPERUSER_USERNAME
+          value: "postgres"
+        - name: PATRONI_SUPERUSER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: PATRONI_REPLICATION_USERNAME
+          value: "replicator"
+        - name: PATRONI_REPLICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: replication-password
+        - name: PATRONI_SCOPE
+          value: "healthflow"
+        - name: PATRONI_KUBERNETES_USE_ENDPOINTS
+          value: "true"
+        - name: PATRONI_POSTGRESQL_DATA_DIR
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: PATRONI_POSTGRESQL_PGPASS
+          value: "/tmp/pgpass"
+        - name: PATRONI_POSTGRESQL_LISTEN
+          value: "0.0.0.0:5432"
+        - name: PATRONI_RESTAPI_LISTEN
+          value: "0.0.0.0:8008"
+        - name: PATRONI_KUBERNETES_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: patroni-config
+          mountPath: /etc/patroni
+        
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8008
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8008
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      
+      volumes:
+      - name: patroni-config
+        configMap:
+          name: patroni-config
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 100Gi
+
+---
+# Patroni Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patroni-config
+  namespace: healthflow-production
+data:
+  patroni.yml: |
+    scope: healthflow
+    namespace: /healthflow/
+    name: ${PATRONI_NAME}
+    
+    restapi:
+      listen: 0.0.0.0:8008
+      connect_address: ${PATRONI_KUBERNETES_POD_IP}:8008
+    
+    kubernetes:
+      namespace: healthflow-production
+      labels:
+        app: patroni
+      use_endpoints: true
+    
+    bootstrap:
+      dcs:
+        ttl: 30
+        loop_wait: 10
+        retry_timeout: 10
+        maximum_lag_on_failover: 1048576
+        postgresql:
+          use_pg_rewind: true
+          use_slots: true
+          parameters:
+            wal_level: replica
+            hot_standby: "on"
+            max_connections: 200
+            max_wal_senders: 10
+            max_replication_slots: 10
+            max_worker_processes: 8
+            wal_keep_size: 128MB
+            shared_buffers: 1GB
+            effective_cache_size: 3GB
+      
+      initdb:
+        - encoding: UTF8
+        - data-checksums
+      
+      pg_hba:
+        - host replication replicator 0.0.0.0/0 md5
+        - host all all 0.0.0.0/0 md5
+    
+    postgresql:
+      listen: 0.0.0.0:5432
+      connect_address: ${PATRONI_KUBERNETES_POD_IP}:5432
+      data_dir: /var/lib/postgresql/data/pgdata
+      pgpass: /tmp/pgpass
+      authentication:
+        replication:
+          username: replicator
+          password: ${PATRONI_REPLICATION_PASSWORD}
+        superuser:
+          username: postgres
+          password: ${PATRONI_SUPERUSER_PASSWORD}
+      parameters:
+        unix_socket_directories: '/var/run/postgresql'
+      
+      create_replica_methods:
+        - basebackup
+      
+      basebackup:
+        max-rate: '100M'
+        checkpoint: 'fast'
+    
+    tags:
+      nofailover: false
+      noloadbalance: false
+      clonefrom: false
+      nosync: false
+
+---
+# Service for Patroni Primary (Auto-updated)
+apiVersion: v1
+kind: Service
+metadata:
+  name: patroni-primary
+  namespace: healthflow-production
+  labels:
+    app: patroni
+    role: primary
+spec:
+  selector:
+    app: patroni
+    role: master
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Service for Patroni Replicas
+apiVersion: v1
+kind: Service
+metadata:
+  name: patroni-replica
+  namespace: healthflow-production
+  labels:
+    app: patroni
+    role: replica
+spec:
+  selector:
+    app: patroni
+    role: replica
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Headless Service for StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: patroni
+  namespace: healthflow-production
+spec:
+  clusterIP: None
+  selector:
+    app: patroni
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  - port: 8008
+    targetPort: 8008
+    name: patroni
+
+---
+# ServiceAccount for Patroni
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: patroni
+  namespace: healthflow-production
+
+---
+# Role for Patroni
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: patroni
+  namespace: healthflow-production
+rules:
+- apiGroups: [""]
+  resources: ["endpoints", "pods"]
+  verbs: ["get", "list", "patch", "update", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "patch", "update", "watch", "create"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: patroni
+  namespace: healthflow-production
+subjects:
+- kind: ServiceAccount
+  name: patroni
+roleRef:
+  kind: Role
+  name: patroni
+  apiGroup: rbac.authorization.k8s.io
+```
+
+---
+
+#### US-2.3: PgBouncer Connection Pooling
+**Story Points:** 4  
+**Priority:** 🟡 HIGH  
+**Owner:** Backend Team
+
+**User Story:**  
+As a backend developer, I need connection pooling so that the database can handle high concurrent load without exhausting connections.
+
+**Acceptance Criteria:**
+- [ ] PgBouncer deployed between app and database
+- [ ] Connection pool size optimized
+- [ ] Transaction pooling mode configured
+- [ ] Connection metrics monitored
+- [ ] Load testing validates 500+ concurrent connections
+
+**Technical Implementation:**
+
+```yaml
+# kubernetes/pgbouncer-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: healthflow-production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pgbouncer
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+    spec:
+      containers:
+      - name: pgbouncer
+        image: edoburu/pgbouncer:1.21.0
+        ports:
+        - containerPort: 5432
+          name: postgres
+        - containerPort: 9127
+          name: metrics
+        env:
+        - name: DATABASES_HOST
+          value: "patroni-primary.healthflow-production.svc.cluster.local"
+        - name: DATABASES_PORT
+          value: "5432"
+        - name: DATABASES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: username
+        - name: DATABASES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: DATABASES_DBNAME
+          value: "healthflow"
+        - name: PGBOUNCER_POOL_MODE
+          value: "transaction"
+        - name: PGBOUNCER_MAX_CLIENT_CONN
+          value: "1000"
+        - name: PGBOUNCER_DEFAULT_POOL_SIZE
+          value: "25"
+        - name: PGBOUNCER_MIN_POOL_SIZE
+          value: "10"
+        - name: PGBOUNCER_RESERVE_POOL_SIZE
+          value: "5"
+        - name: PGBOUNCER_RESERVE_POOL_TIMEOUT
+          value: "5"
+        - name: PGBOUNCER_MAX_DB_CONNECTIONS
+          value: "50"
+        - name: PGBOUNCER_SERVER_IDLE_TIMEOUT
+          value: "600"
+        - name: PGBOUNCER_QUERY_TIMEOUT
+          value: "30"
+        - name: PGBOUNCER_STATS_USERS
+          value: "postgres"
+        
+        volumeMounts:
+        - name: pgbouncer-config
+          mountPath: /etc/pgbouncer
+        
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      
+      - name: pgbouncer-exporter
+        image: prometheuscommunity/pgbouncer-exporter:latest
+        ports:
+        - containerPort: 9127
+          name: metrics
+        env:
+        - name: PGBOUNCER_HOST
+          value: "localhost"
+        - name: PGBOUNCER_PORT
+          value: "5432"
+        - name: PGBOUNCER_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: username
+        - name: PGBOUNCER_PASS
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      
+      volumes:
+      - name: pgbouncer-config
+        configMap:
+          name: pgbouncer-config
+
+---
+# Service for PgBouncer
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: healthflow-production
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9127"
+spec:
+  selector:
+    app: pgbouncer
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  - port: 9127
+    targetPort: 9127
+    name: metrics
+  type: ClusterIP
+
+---
+# PgBouncer ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: healthflow-production
+data:
+  pgbouncer.ini: |
+    [databases]
+    healthflow = host=patroni-primary.healthflow-production.svc.cluster.local port=5432 dbname=healthflow
+    
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 5432
+    unix_socket_dir =
+    user = postgres
+    auth_file = /etc/pgbouncer/userlist.txt
+    auth_type = md5
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 25
+    min_pool_size = 10
+    reserve_pool_size = 5
+    reserve_pool_timeout = 5
+    max_db_connections = 50
+    max_user_connections = 50
+    server_idle_timeout = 600
+    server_lifetime = 3600
+    server_connect_timeout = 15
+    query_timeout = 30
+    query_wait_timeout = 120
+    client_idle_timeout = 0
+    idle_transaction_timeout = 0
+    pkt_buf = 4096
+    max_packet_size = 2147483647
+    listen_backlog = 128
+    sbuf_loopcnt = 5
+    suspend_timeout = 10
+    tcp_defer_accept = 0
+    tcp_socket_buffer = 0
+    tcp_keepalive = 1
+    tcp_keepidle = 0
+    tcp_keepintvl = 0
+    tcp_keepcnt = 0
+    log_connections = 1
+    log_disconnections = 1
+    log_pooler_errors = 1
+    stats_period = 60
+    verbose = 0
+    admin_users = postgres
+    stats_users = postgres
+```
+
+---
+
+### Priority 2: Distributed Tracing (15 points)
+
+#### US-2.4: OpenTelemetry Implementation
+**Story Points:** 8  
+**Priority:** 🟡 HIGH  
+**Owner:** Backend Team + DevOps
+
+**User Story:**  
+As a developer, I need distributed tracing across all services so that I can debug performance issues and understand request flow through the system.
+
+**Acceptance Criteria:**
+- [ ] OpenTelemetry SDK integrated in Flask app
+- [ ] Automatic instrumentation for Flask, SQLAlchemy, Redis, Celery
+- [ ] Custom spans for business logic
+- [ ] Trace context propagation across services
+- [ ] Jaeger backend deployed
+- [ ] Traces viewable in Jaeger UI
+
+**Technical Implementation:**
+
+```python
+# src/tracing/opentelemetry_config.py
+"""
+OpenTelemetry configuration for distributed tracing.
+"""
+
+import os
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.instrumentation.redis import RedisInstrumentor
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def init_tracer(app):
+    """
+    Initialize OpenTelemetry tracing for the Flask application.
+    
+    Args:
+        app: Flask application instance
+    """
+    
+    # Create resource with service information
+    resource = Resource(attributes={
+        SERVICE_NAME: os.getenv('SERVICE_NAME', 'healthflow-backend'),
+        SERVICE_VERSION: os.getenv('SERVICE_VERSION', '1.0.0'),
+        "environment": os.getenv('ENVIRONMENT', 'production'),
+        "deployment.namespace": os.getenv('NAMESPACE', 'healthflow-production')
+    })
+    
+    # Create tracer provider
+    provider = TracerProvider(resource=resource)
+    
+    # Configure OTLP exporter (sends to Jaeger/Tempo)
+    otlp_exporter = OTLPSpanExporter(
+        endpoint=os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT', 'jaeger:4317'),
+        insecure=True  # Use TLS in production
+    )
+    
+    # Add span processor
+    provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+    
+    # Set global tracer provider
+    trace.set_tracer_provider(provider)
+    
+    # Auto-instrument Flask
+    FlaskInstrumentor().instrument_app(app)
+    
+    # Auto-instrument SQLAlchemy
+    from src.database import db
+    SQLAlchemyInstrumentor().instrument(
+        engine=db.engine,
+        service="healthflow-postgres"
+    )
+    
+    # Auto-instrument Redis
+    import redis
+    RedisInstrumentor().instrument()
+    
+    # Auto-instrument Celery
+    CeleryInstrumentor().instrument()
+    
+    # Auto-instrument requests library
+    RequestsInstrumentor().instrument()
+    
+    logger.info(f"OpenTelemetry tracing initialized for {resource.attributes[SERVICE_NAME]}")
+    
+    return trace.get_tracer(__name__)
+
+
+# Custom tracing decorators
+def trace_function(span_name=None):
+    """
+    Decorator to trace a function with a custom span.
+    
+    Usage:
+        @trace_function("process_prescription")
+        def process_prescription(prescription_id):
+            ...
+    """
+    def decorator(func):
+        from functools import wraps
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            tracer = trace.get_tracer(__name__)
+            name = span_name or func.__name__
+            
+            with tracer.start_as_current_span(name) as span:
+                # Add function metadata
+                span.set_attribute("function.name", func.__name__)
+                span.set_attribute("function.module", func.__module__)
+                
+                try:
+                    result = func(*args, **kwargs)
+                    span.set_attribute("function.result", "success")
+                    return result
+                except Exception as e:
+                    span.set_attribute("function.result", "error")
+                    span.set_attribute("error.type", type(e).__name__)
+                    span.set_attribute("error.message", str(e))
+                    span.record_exception(e)
+                    raise
+        
+        return wrapper
+    return decorator
+
+
+def add_span_attributes(**attributes):
+    """
+    Add custom attributes to the current span.
+    
+    Usage:
+        add_span_attributes(
+            prescription_id="123",
+            patient_type="new",
+            ocr_confidence=0.95
+        )
+    """
+    span = trace.get_current_span()
+    if span:
+        for key, value in attributes.items():
+            span.set_attribute(key, value)
+
+
+def add_span_event(name, **attributes):
+    """
+    Add an event to the current span.
+    
+    Usage:
+        add_span_event("prescription_validated", confidence=0.95)
+    """
+    span = trace.get_current_span()
+    if span:
+        span.add_event(name, attributes=attributes)
+```
+
+**Usage Example:**
+
+```python
+# src/api/prescriptions.py
+from src.tracing.opentelemetry_config import trace_function, add_span_attributes, add_span_event
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
+@app.route('/api/prescriptions/<prescription_id>/process', methods=['POST'])
+@trace_function("process_prescription_api")
+def process_prescription(prescription_id):
+    # Current span is automatically created by Flask instrumentation
+    # Add custom attributes
+    add_span_attributes(
+        prescription_id=prescription_id,
+        user_id=g.current_user.id
+    )
+    
+    # Create custom child span for OCR
+    with tracer.start_as_current_span("ocr_extraction") as ocr_span:
+        ocr_result = ocr_service.extract_text(prescription.image_path)
+        ocr_span.set_attribute("ocr.confidence", ocr_result.confidence)
+        ocr_span.set_attribute("ocr.text_length", len(ocr_result.text))
+        
+        if ocr_result.confidence < 0.85:
+            add_span_event("low_confidence_detected", confidence=ocr_result.confidence)
+    
+    # Create custom child span for NLP
+    with tracer.start_as_current_span("nlp_extraction") as nlp_span:
+        nlp_result = nlp_service.extract_entities(ocr_result.text)
+        nlp_span.set_attribute("nlp.medications_found", len(nlp_result.medications))
+    
+    # Create custom child span for validation
+    with tracer.start_as_current_span("validation") as validation_span:
+        validation_result = validation_service.validate(prescription, ocr_result, nlp_result)
+        validation_span.set_attribute("validation.requires_review", validation_result['requires_review'])
+        validation_span.set_attribute("validation.flags_count", len(validation_result['flags']))
+    
+    return jsonify(validation_result)
+```
+
+---
+
+Would you like me to continue with the remaining Sprint 2 artifacts (Centralized Logging, Enhanced Monitoring, and Circuit Breakers)?
