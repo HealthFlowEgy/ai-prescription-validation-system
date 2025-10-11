@@ -1,0 +1,125 @@
+# HealthFlow AI - Docker Ignore File
+# Prevents sensitive and unnecessary files from being included in Docker images
+
+# Environment files (CRITICAL - prevents secrets in images)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+docs/
+*.md
+!README.md
+LICENSE
+
+# Tests
+tests/
+test_*.py
+*_test.py
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Node modules (for frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Deployment scripts
+scripts/
+deployment/
+*.sh
+!docker-entrypoint.sh
+
+# Backups
+backups/
+*.backup
+*.dump
+
+# Development files
+docker-compose.override.yml
+Makefile
+requirements_dev.txt
+requirements_test.txt
+
+# Monitoring configs (use environment-specific)
+monitoring/
+prometheus/
+grafana/
+
+# Certificates (should be mounted, not baked in)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Large binary files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# OS files
+Thumbs.db
+.DS_Store
+

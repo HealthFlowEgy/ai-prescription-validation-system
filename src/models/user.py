@@ -2,9 +2,7 @@
 User model with authentication support
 """
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from models.database import db
 
 
 class User(db.Model):

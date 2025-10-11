@@ -9,7 +9,7 @@ import re
 from src.models.prescription import (
     Prescription, Medication, ValidationResult, ValidationStatus
 )
-from src.models.user import db
+from models.database import db
 from src.services.snowstorm_service import SnowstormService, SnowstormDrugInteraction
 
 # Configure logging

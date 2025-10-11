@@ -5,7 +5,7 @@
 # ============================================================================
 # CORE FRAMEWORK
 # ============================================================================
-Flask==3.0.0
+Flask==3.1.2
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
 Flask-Login==0.6.3
@@ -13,7 +13,7 @@ Flask-WTF==1.2.1
 Flask-Mail==0.9.1
 Flask-Caching==2.1.0
 Flask-Limiter==3.5.0
-Flask-CORS==4.0.0
+Flask-CORS==6.0.1
 Flask-JWT-Extended==4.6.0
 Flask-Admin==1.6.1
 Flask-Security-Too==5.3.2
@@ -21,10 +21,10 @@ Flask-Security-Too==5.3.2
 # ============================================================================
 # DATABASE & ORM
 # ============================================================================
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.43
 psycopg2-binary==2.9.9
 alembic==1.13.1
-redis==5.0.1
+redis==6.4.0
 pymongo==4.6.0
 
 # ============================================================================
@@ -35,7 +35,7 @@ cryptography==41.0.8
 PyJWT==2.8.0
 authlib==1.2.1
 pyotp==2.9.0
-qrcode==7.4.2
+qrcode==8.2
 passlib==1.7.4
 argon2-cffi==23.1.0
 
@@ -86,10 +86,10 @@ PyPDF2==3.0.1
 # ============================================================================
 # HTTP CLIENTS & REQUESTS
 # ============================================================================
-requests==2.31.0
+requests==2.32.5
 httpx==0.25.2
 aiohttp==3.9.1
-urllib3==2.1.0
+urllib3==2.5.0
 
 # ============================================================================
 # TASK QUEUE & ASYNC
@@ -166,7 +166,7 @@ mkdocs-material==9.4.8
 # ============================================================================
 # DEPLOYMENT & CONTAINERIZATION
 # ============================================================================
-gunicorn==21.2.0
+gunicorn==23.0.0
 uwsgi==2.0.23
 gevent==23.9.1
 docker==6.1.3
@@ -329,12 +329,20 @@ psutil==5.9.6
 gevent==23.9.1
 
 # Additional security
-itsdangerous==2.1.2
+itsdangerous>=2.2.0
 
 pytest==7.4.3
 
 # Security enhancements
 python-magic==0.4.27
 python-magic-bin==0.4.14; sys_platform == 'win32'
-redis==5.0.1
+redis==6.4.0
 Flask-Limiter==3.5.0
+
+# Security updates from Dependabot (Week 1 Sprint)
+certifi==2025.8.3
+typing-extensions==4.14.1
+
+# HIPAA Compliance Security Updates
+cryptography>=41.0.0
+
