@@ -14,7 +14,8 @@ from typing import Dict, List, Any
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from main import app
-from models.user import db, User
+from models.database import db
+from models.user import User
 from models.prescription import (
     Prescription, Medication, ValidationResult, AuditLog
 )

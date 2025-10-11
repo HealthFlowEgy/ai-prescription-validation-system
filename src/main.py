@@ -23,7 +23,8 @@ from config.production_simple import get_config
 from config.database_enforcer import validate_database_on_startup, get_database_status
 
 # Import models
-from models.user import db, User
+from models.database import db
+from models.user import User
 
 # Import services
 from services.auth_service import AuthService

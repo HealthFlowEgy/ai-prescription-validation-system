@@ -6,7 +6,8 @@ File: src/routes/auth_routes.py
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from services.auth_service import AuthService, token_required
-from models.user import User, db
+from models.database import db
+from models.user import User
 from models.prescription import AuditLog
 import re
 

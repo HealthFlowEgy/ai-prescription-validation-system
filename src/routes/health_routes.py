@@ -5,7 +5,7 @@ File: src/routes/health_routes.py
 
 from flask import Blueprint, jsonify
 from datetime import datetime
-from models.user import db
+from models.database import db
 from services.monitoring_service import metrics_collector, get_metrics_summary
 from services.auth_service import token_required, role_required
 import os

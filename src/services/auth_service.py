@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Tuple
 from functools import wraps
 from flask import request, jsonify, current_app
-from models.user import User, db
+from models.database import db
+from models.user import User
 from utils.password_validator import PasswordValidator
 from utils.token_manager import get_token_manager
 
