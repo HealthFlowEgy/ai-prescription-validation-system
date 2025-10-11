@@ -339,12 +339,10 @@ python-magic-bin==0.4.14; sys_platform == 'win32'
 redis==6.4.0
 Flask-Limiter==3.5.0
 
-# Security updates from Dependabot
-certifi==2025.8.3
-typing-extensions==4.14.1
-
-
 # Security updates from Dependabot (Week 1 Sprint)
 certifi==2025.8.3
 typing-extensions==4.14.1
+
+# HIPAA Compliance Security Updates
+cryptography>=41.0.0
 
