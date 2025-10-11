@@ -594,3 +594,14 @@ config/development_local.py
 # Always review before committing to ensure no sensitive data is included.
 # Use git-secrets or similar tools to prevent accidental commits of secrets.
 
+
+# Donut OCR model cache
+src/ml_models/medical_ocr/model/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Hugging Face cache
+.cache/huggingface/
+transformers_cache/
