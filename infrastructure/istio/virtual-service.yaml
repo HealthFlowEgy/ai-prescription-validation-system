@@ -1,0 +1,51 @@
+# Istio Virtual Service for routing
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: healthflow-api
+  namespace: healthflow
+spec:
+  hosts:
+  - api.healthflow.com
+  gateways:
+  - healthflow-gateway
+  http:
+  # Canary deployment (10% to v2)
+  - match:
+    - headers:
+        x-canary:
+          exact: "true"
+    route:
+    - destination:
+        host: healthflow-api
+        subset: v2
+      weight: 100
+  
+  # Production traffic (90% v1, 10% v2)
+  - route:
+    - destination:
+        host: healthflow-api
+        subset: v1
+      weight: 90
+    - destination:
+        host: healthflow-api
+        subset: v2
+      weight: 10
+    
+    # Timeout
+    timeout: 30s
+    
+    # Retry policy
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+    
+    # Fault injection (for testing)
+    fault:
+      delay:
+        percentage:
+          value: 0  # Disabled in production
+        fixedDelay: 0s
+

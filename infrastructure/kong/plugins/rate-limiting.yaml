@@ -1,0 +1,22 @@
+# Kong Rate Limiting Plugin Configuration
+
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: global-rate-limit
+  annotations:
+    kubernetes.io/ingress.class: kong
+  labels:
+    global: "true"
+spec:
+  plugin: rate-limiting
+  config:
+    minute: 100
+    hour: 1000
+    policy: redis
+    redis_host: redis.healthflow.svc.cluster.local
+    redis_port: 6379
+    redis_timeout: 2000
+    fault_tolerant: true
+    hide_client_headers: false
+

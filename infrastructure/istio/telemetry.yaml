@@ -1,0 +1,28 @@
+# Enhanced telemetry with Istio
+
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: healthflow-telemetry
+  namespace: healthflow
+spec:
+  # Metrics
+  metrics:
+  - providers:
+    - name: prometheus
+    dimensions:
+      request_protocol: request.protocol
+      response_code: response.code
+      source_workload: source.workload.name
+      destination_workload: destination.workload.name
+  
+  # Tracing
+  tracing:
+  - providers:
+    - name: jaeger
+    randomSamplingPercentage: 10.0
+    customTags:
+      user_id:
+        header:
+          name: x-user-id
+

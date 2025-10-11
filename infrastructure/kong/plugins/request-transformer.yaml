@@ -1,0 +1,18 @@
+# Add custom headers to requests
+
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: request-transformer
+  namespace: healthflow
+spec:
+  plugin: request-transformer
+  config:
+    add:
+      headers:
+      - X-Gateway: kong
+      - X-Gateway-Version: 3.4
+    remove:
+      headers:
+      - X-Sensitive-Header
+
