@@ -176,27 +176,31 @@ kubernetes==28.1.0
 # HEALTHCARE SPECIFIC
 # ============================================================================
 # Medical coding systems
-icd10-cm==2023.1
-snomed-ct==2023.1
+# Note: These packages are not available in PyPI with these versions
+# Install from official sources or use alternative packages
+# icd10-cm==2023.1  # Not available in PyPI
+# snomed-ct==2023.1  # Not available in PyPI
 
 # Drug databases
-rxnorm==2023.1
-ndc==2023.1
+# rxnorm==2023.1  # Not available in PyPI
+# ndc==2023.1  # Not available in PyPI
 
 # Clinical decision support
-cds-hooks==1.0.0
+# cds-hooks==1.0.0  # Not available in PyPI
 
 # ============================================================================
 # INTERNATIONAL STANDARDS
 # ============================================================================
+# Note: These packages are not available in PyPI
+# Install from official sources when needed
 # Estonia X-Road integration
-x-road-client==1.0.0
+# x-road-client==1.0.0  # Not available in PyPI
 
 # NHS CIS2 authentication
-nhs-cis2==1.0.0
+# nhs-cis2==1.0.0  # Not available in PyPI
 
 # Netherlands MedCom standards
-medcom-fhir==1.0.0
+# medcom-fhir==1.0.0  # Not available in PyPI
 
 # ============================================================================
 # ADDITIONAL UTILITIES
