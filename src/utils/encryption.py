@@ -304,10 +304,8 @@ class EncryptionError(Exception):
     """Exception raised when encryption fails"""
 
 
-
 class DecryptionError(Exception):
     """Exception raised when decryption fails"""
-
 
 
 # Global instance

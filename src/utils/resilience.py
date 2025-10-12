@@ -204,7 +204,6 @@ class CircuitBreakerOpenException(Exception):
     """Raised when circuit breaker is open."""
 
 
-
 # ============================================
 # Retry with Exponential Backoff
 # ============================================
@@ -301,7 +300,6 @@ import signal
 
 class TimeoutException(Exception):
     """Raised when function execution times out."""
-
 
 
 def timeout(seconds: int):

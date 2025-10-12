@@ -261,7 +261,7 @@ rollbar==0.16.3
 # VERSION CONSTRAINTS
 # ============================================================================
 # Ensure compatibility with Python 3.11+
-python-version>=3.11
+# Note: Python version is specified in setup.py or pyproject.toml, not here
 
 # Security updates
 setuptools>=65.5.1

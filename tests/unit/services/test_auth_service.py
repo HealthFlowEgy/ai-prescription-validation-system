@@ -2,7 +2,6 @@
 Unit tests for AuthService
 """
 
-
 import pytest
 
 from services.auth_service import AuthService

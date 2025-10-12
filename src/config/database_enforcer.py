@@ -16,7 +16,6 @@ class DatabaseConfigurationError(Exception):
     """Raised when database configuration is invalid for environment"""
 
 
-
 class DatabaseEnforcer:
     """
     Enforce database requirements based on environment

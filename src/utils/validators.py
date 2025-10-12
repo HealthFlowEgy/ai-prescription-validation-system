@@ -15,7 +15,6 @@ class ValidationError(Exception):
     """Base validation error."""
 
 
-
 class EmailValidator:
     """Email validation utilities."""
 
