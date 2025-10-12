@@ -371,7 +371,7 @@ boto3==1.34.10
 botocore==1.34.10
 
 # Chaos engineering
-chaostoolkit==1.17.0
+chaostoolkit==1.17.1
 chaostoolkit-lib==1.40.0
 chaostoolkit-kubernetes==0.32.0
 
