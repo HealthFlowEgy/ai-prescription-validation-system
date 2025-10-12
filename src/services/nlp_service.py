@@ -1,10 +1,9 @@
-import json
 import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import date, datetime
-from typing import Dict, List, Optional, Tuple, Union
+from datetime import datetime
+from typing import Dict, List, Optional
 
 import requests
 

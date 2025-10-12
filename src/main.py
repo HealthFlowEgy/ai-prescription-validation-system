@@ -10,11 +10,9 @@ import os
 import sys
 from datetime import datetime
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.exceptions import HTTPException
 
 # Add src to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,9 +30,7 @@ from models.user import User
 from routes.health_routes import health_bp
 
 # Import services
-from services.auth_service import AuthService
 from services.monitoring_service import MonitoringService, metrics_collector
-from services.nlp_service import NLPService
 
 # Import error handlers
 from utils.error_handlers import register_error_handlers

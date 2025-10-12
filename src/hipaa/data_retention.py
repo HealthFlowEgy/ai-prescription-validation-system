@@ -6,7 +6,7 @@ Automates data lifecycle management and retention policies.
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 

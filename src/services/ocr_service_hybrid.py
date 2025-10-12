@@ -5,7 +5,6 @@ Provides best-in-class OCR for medical prescriptions
 
 import logging
 import os
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)

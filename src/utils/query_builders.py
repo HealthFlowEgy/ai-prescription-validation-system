@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Type, TypeVar
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 T = TypeVar("T")

@@ -150,7 +150,6 @@ class TestSecurityHeaders:
         """Test that security headers are configured."""
         # This would require a Flask app context
         # Placeholder for actual implementation
-        pass
 
 
 class TestRateLimiting:
@@ -160,4 +159,3 @@ class TestRateLimiting:
         """Test that rate limits are enforced."""
         # This would require a Flask app context and Redis
         # Placeholder for actual implementation
-        pass

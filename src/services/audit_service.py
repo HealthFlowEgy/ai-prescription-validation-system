@@ -20,8 +20,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from flask import g, request
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from models.database import db
 

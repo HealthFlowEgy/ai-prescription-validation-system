@@ -14,7 +14,6 @@ import pytest
 from src.utils.encryption import (
     PHI_FIELDS,
     DecryptionError,
-    EncryptionError,
     EncryptionService,
 )
 

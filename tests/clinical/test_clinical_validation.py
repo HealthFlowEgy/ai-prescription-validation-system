@@ -17,12 +17,9 @@ from src.models.prescription import Prescription
 from src.models.user import User
 from src.services.clinical_validation_service import (
     ClinicalValidationService,
-    PharmacistReview,
     ReviewPriority,
     ReviewStatus,
-    SafetyAlert,
     SafetySeverity,
-    ValidationFlag,
 )
 
 

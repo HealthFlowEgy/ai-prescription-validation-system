@@ -3,7 +3,6 @@ Real-Time Prescription Tracking Service
 Provides status updates, notifications, and lifecycle management
 """
 
-import asyncio
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field

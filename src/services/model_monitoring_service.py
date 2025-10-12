@@ -13,11 +13,10 @@ import statistics
 from collections import defaultdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
 
 from src.models.database import db
 

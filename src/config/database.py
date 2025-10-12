@@ -4,7 +4,6 @@ File: src/config/database.py
 """
 
 import os
-from typing import Optional
 
 
 class DatabaseConfig:

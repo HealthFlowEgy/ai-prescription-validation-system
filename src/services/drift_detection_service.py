@@ -15,8 +15,7 @@ Date: 2025-10-28
 
 import hashlib
 import logging
-import random
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
@@ -703,7 +702,7 @@ class ABTestingService:
 # API Routes
 # ============================================================================
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, jsonify, request
 
 from src.services.auth_service import require_auth, require_role
 

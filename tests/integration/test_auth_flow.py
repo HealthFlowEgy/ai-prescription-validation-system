@@ -13,7 +13,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from main import create_app
-from models.user import User, db
+from models.user import db
 
 
 @pytest.fixture

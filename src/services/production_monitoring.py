@@ -3,7 +3,6 @@ Production Monitoring and Alerting Service
 Implements real-time monitoring, drift detection, and alert management
 """
 
-import json
 import logging
 from collections import deque
 from dataclasses import dataclass
@@ -390,7 +389,6 @@ class AlertManager:
 
     def _create_alert(self, rule_name: str, rule: Dict, metrics: Dict) -> Alert:
         """Create alert object"""
-        import uuid
 
         alert_id = f"{rule_name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
 

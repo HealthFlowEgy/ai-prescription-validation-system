@@ -4,7 +4,6 @@ All hardcoded values should reference these constants.
 """
 
 from datetime import timedelta
-from enum import Enum
 
 
 class SecurityConstants:

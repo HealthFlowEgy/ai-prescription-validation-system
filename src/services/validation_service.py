@@ -2,10 +2,9 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional
 
-import requests
 
 from models.database import db
 from src.models.prescription import (
@@ -14,7 +13,7 @@ from src.models.prescription import (
     ValidationResult,
     ValidationStatus,
 )
-from src.services.snowstorm_service import SnowstormDrugInteraction, SnowstormService
+from src.services.snowstorm_service import SnowstormService
 
 # Configure logging
 logger = logging.getLogger(__name__)

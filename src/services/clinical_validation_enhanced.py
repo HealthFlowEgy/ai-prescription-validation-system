@@ -7,9 +7,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import requests
 
-from src.models.database import db
 from src.models.prescription import Prescription
 
 logger = logging.getLogger(__name__)

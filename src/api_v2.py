@@ -8,7 +8,6 @@ import time
 import uuid
 from datetime import datetime
 from functools import wraps
-from typing import Dict, Optional
 
 from clinical_validation import ClinicalValidationService
 from flask import Flask, g, jsonify, request

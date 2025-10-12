@@ -2,14 +2,12 @@
 Tests for Enhanced Clinical Validation Service
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-import pytest
 
 from src.services.clinical_validation_enhanced import (
     ClinicalValidationService,
     DrugInteractionService,
-    ValidationConfig,
     ValidationFlag,
 )
 

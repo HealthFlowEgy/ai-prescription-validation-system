@@ -7,13 +7,12 @@ Author: HealthFlow Security Team
 Date: 2025-10-14
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytest
 
 from src.services.audit_service import (
     AuditAction,
-    AuditLogModel,
     AuditService,
     AuditSeverity,
 )

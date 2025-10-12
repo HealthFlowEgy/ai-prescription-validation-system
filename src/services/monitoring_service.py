@@ -8,7 +8,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import psutil
 from flask import g, request

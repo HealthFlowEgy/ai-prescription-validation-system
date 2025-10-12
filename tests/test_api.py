@@ -6,7 +6,6 @@ API tests for AI-Based Digital Prescription Validation System
 import json
 import os
 import sys
-import tempfile
 import unittest
 from io import BytesIO
 
@@ -14,7 +13,6 @@ from io import BytesIO
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from main import app
-from models.prescription import Prescription, ProcessingStatus, ValidationStatus
 from models.user import User, db
 
 

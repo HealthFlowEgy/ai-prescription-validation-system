@@ -7,7 +7,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import magic
 from werkzeug.datastructures import FileStorage

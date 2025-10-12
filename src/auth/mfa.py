@@ -8,7 +8,7 @@ import io
 import logging
 import secrets
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import List
 
 import pyotp
 import qrcode
@@ -144,7 +144,7 @@ mfa_service = MFAService(issuer_name="HealthFlow AI")
 
 
 # MFA API endpoints
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, jsonify, request
 
 mfa_bp = Blueprint("mfa", __name__, url_prefix="/api/mfa")
 

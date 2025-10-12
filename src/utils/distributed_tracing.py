@@ -3,15 +3,13 @@ Centralized Logging & Monitoring Configuration
 Implements ELK Stack integration and Prometheus metrics
 """
 
-import json
 import logging
 import os
 import time
 from datetime import datetime
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
-import structlog
 from prometheus_client import Counter, Gauge, Histogram, Info
 from pythonjsonlogger import jsonlogger
 

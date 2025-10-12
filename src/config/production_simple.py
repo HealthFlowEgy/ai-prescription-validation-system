@@ -3,7 +3,6 @@ Simplified production configuration
 """
 
 import os
-from datetime import timedelta
 
 
 class ProductionConfig:

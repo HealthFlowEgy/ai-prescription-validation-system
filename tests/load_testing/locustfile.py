@@ -5,9 +5,7 @@ Uses Locust for distributed load testing.
 Target: 5,000 concurrent users with P95 latency < 300ms
 """
 
-import json
 import random
-import time
 from datetime import datetime
 
 from locust import HttpUser, between, events, task

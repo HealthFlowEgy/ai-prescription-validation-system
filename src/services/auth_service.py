@@ -12,10 +12,8 @@ import bcrypt
 import jwt
 from flask import current_app, jsonify, request
 
-from models.database import db
 from models.user import User
 from utils.password_validator import PasswordValidator
-from utils.token_manager import get_token_manager
 
 
 class AuthService:

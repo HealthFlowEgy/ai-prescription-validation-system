@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class DatabaseConfigurationError(Exception):
     """Raised when database configuration is invalid for environment"""
 
-    pass
 
 
 class DatabaseEnforcer:

@@ -4,7 +4,6 @@ Extract common patterns into reusable functions.
 """
 
 import re
-from typing import List, Optional
 
 from email_validator import EmailNotValidError
 from email_validator import validate_email as _validate_email
@@ -15,7 +14,6 @@ from src.config.constants import SecurityConstants, ValidationConstants
 class ValidationError(Exception):
     """Base validation error."""
 
-    pass
 
 
 class EmailValidator:

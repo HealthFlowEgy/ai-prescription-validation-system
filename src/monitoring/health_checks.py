@@ -6,7 +6,7 @@ Provides detailed system health status for monitoring and alerting
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import psutil
 import redis

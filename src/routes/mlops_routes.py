@@ -7,10 +7,8 @@ Author: HealthFlow ML Engineering Team
 Date: 2025-10-28
 """
 
-from datetime import datetime, timedelta
-from typing import Optional
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, jsonify, request
 
 try:
     from services.auth_service import require_auth, require_role

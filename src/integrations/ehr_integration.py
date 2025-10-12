@@ -4,11 +4,10 @@ Supports Epic, Cerner, and Allscripts EHR systems
 Implements OAuth2 authentication and SMART on FHIR
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -184,22 +183,18 @@ class EHRConnector(ABC):
     @abstractmethod
     def get_patient(self, patient_id: str) -> Dict:
         """Get patient information"""
-        pass
 
     @abstractmethod
     def get_medications(self, patient_id: str) -> List[Dict]:
         """Get patient's current medications"""
-        pass
 
     @abstractmethod
     def create_prescription(self, prescription_data: Dict) -> Dict:
         """Create new prescription order"""
-        pass
 
     @abstractmethod
     def get_prescription_status(self, prescription_id: str) -> Dict:
         """Get prescription status"""
-        pass
 
     def _make_request(
         self,

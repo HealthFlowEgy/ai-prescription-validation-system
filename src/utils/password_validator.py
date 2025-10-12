@@ -3,11 +3,10 @@ Enhanced Password Validator following OWASP guidelines
 File: src/utils/password_validator.py
 """
 
-import re
 import string
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Tuple
 
 
 @dataclass

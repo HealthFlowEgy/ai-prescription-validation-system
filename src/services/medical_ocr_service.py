@@ -5,7 +5,6 @@ Repository: https://github.com/HealthFlowEgy/Medical-Prescription-OCR
 """
 
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple

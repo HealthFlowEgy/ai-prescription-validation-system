@@ -1,11 +1,10 @@
 import json
 import logging
 import os
-import tempfile
 import uuid
 from datetime import datetime
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
 
@@ -15,11 +14,9 @@ from src.models.prescription import (
     Medication,
     Prescription,
     ProcessingStatus,
-    ValidationResult,
     ValidationStatus,
     db,
 )
-from src.models.user import User
 from src.services.nlp_service import NLPService
 from src.services.ocr_service import OCRService
 from src.services.validation_service import ValidationService

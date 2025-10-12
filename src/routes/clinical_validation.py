@@ -13,7 +13,6 @@ from typing import Optional
 from flask import Blueprint, g, jsonify, request
 
 try:
-    from models.prescription import Prescription
     from services.auth_service import require_auth, require_role
     from services.clinical_validation_service import (
         ClinicalValidationService,
@@ -32,7 +31,6 @@ except ImportError:
         ReviewPriority,
         SafetySeverity,
     )
-    from src.models.prescription import Prescription
     from src.services.auth_service import require_auth, require_role
     from src.utils.validators import validate_request
 

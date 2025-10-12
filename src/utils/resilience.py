@@ -13,13 +13,11 @@ Patterns Implemented:
 import logging
 import threading
 import time
-from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
-import redis
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +203,6 @@ class CircuitBreaker:
 class CircuitBreakerOpenException(Exception):
     """Raised when circuit breaker is open."""
 
-    pass
 
 
 # ============================================
@@ -305,7 +302,6 @@ import signal
 class TimeoutException(Exception):
     """Raised when function execution times out."""
 
-    pass
 
 
 def timeout(seconds: int):

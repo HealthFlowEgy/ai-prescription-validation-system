@@ -216,9 +216,9 @@ cssselect==1.2.0
 # ============================================================================
 # PERFORMANCE & CACHING
 # ============================================================================
-memcached==1.59
-python-memcached==1.59
-django-redis==5.4.0
+# memcached==1.59  # Not available in PyPI
+python-memcached==1.62
+# django-redis==5.4.0  # Django-specific, not needed for Flask
 
 # ============================================================================
 # INTERNATIONALIZATION

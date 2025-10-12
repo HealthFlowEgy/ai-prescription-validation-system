@@ -291,7 +291,6 @@ def grant_consent():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.auth.rbac import Permission, require_permission
 
     # Authenticate
     auth_header = request.headers.get("Authorization")

@@ -16,7 +16,7 @@ Version: 2.0.0
 import os
 import secrets
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from pydantic import BaseSettings, Field, validator

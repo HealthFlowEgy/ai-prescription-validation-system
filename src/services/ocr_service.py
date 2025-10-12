@@ -1,16 +1,13 @@
-import base64
 import json
 import logging
 import os
-import tempfile
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict
 
 import cv2
 import numpy as np
 import pytesseract
 from pdf2image import convert_from_path
-from PIL import Image
 
 # Configure logging
 logger = logging.getLogger(__name__)

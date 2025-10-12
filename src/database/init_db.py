@@ -13,13 +13,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from main import app
 from models.database import db
 from models.prescription import (
-    AuditLog,
-    InputFormat,
-    Medication,
     Prescription,
-    ProcessingStatus,
     ValidationResult,
-    ValidationStatus,
 )
 from models.user import User
 

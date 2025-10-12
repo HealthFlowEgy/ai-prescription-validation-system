@@ -20,18 +20,15 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
 
 # Flask and extensions
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, request
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 
-from config.database import DatabaseConfig
 
 # Production-ready configuration
 from config.production import get_config
@@ -43,12 +40,7 @@ from utils.error_handlers import register_error_handlers
 
 # Existing services (preserved)
 try:
-    from services.ai_interaction_engine import AIInteractionEngine
-    from services.analytics_service import AnalyticsService
-    from services.demographics_service import DemographicsService
-    from services.fhir_service import FHIRService
     from services.identity_service import IdentityService
-    from services.prescription_processor import PrescriptionProcessor
 except ImportError as e:
     logging.warning(f"Some services not available: {e}")
 
@@ -71,7 +63,6 @@ except ImportError as e:
 
 # Models
 from models.database import db
-from models.prescription import Prescription
 from models.user import User
 
 # ============================================================================

@@ -3,7 +3,6 @@ MLflow Model Registry Service for HealthFlow AI
 Handles model versioning, deployment, and lifecycle management
 """
 
-import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional

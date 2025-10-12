@@ -6,8 +6,6 @@ Tests system behavior under extreme load conditions.
 import concurrent.futures
 import time
 
-import pytest
-import requests
 from locust import HttpUser, between, task
 
 

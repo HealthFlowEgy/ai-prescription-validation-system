@@ -9,24 +9,22 @@ Run with:
 
 import json
 import os
-import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import redis
 
-from src.encryption.encrypted_types import EncryptedDate, EncryptedString, EncryptedText
+from src.encryption.encrypted_types import EncryptedDate, EncryptedString
 
 # Import modules to test
 from src.encryption.field_encryption import (
     DecryptionError,
-    EncryptionError,
     EncryptionKeyManager,
     FieldEncryptionService,
 )
-from src.models.prescription import Prescription, User
+from src.models.prescription import Prescription
 
 # ============================================
 # Fixtures
@@ -683,7 +681,6 @@ class TestEndToEndEncryption:
         """Test that encrypted data survives backup and restore."""
         # This would test the complete backup/restore cycle
         # Implementation depends on actual backup infrastructure
-        pass
 
 
 # ============================================

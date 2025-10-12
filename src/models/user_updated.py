@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, DateTime
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Integer, String
 
 db = SQLAlchemy()

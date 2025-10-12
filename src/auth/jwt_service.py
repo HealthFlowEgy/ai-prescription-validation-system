@@ -4,7 +4,6 @@ Implements secure token generation, validation, and revocation.
 """
 
 import logging
-import os
 import uuid
 from datetime import datetime, timedelta
 from functools import wraps

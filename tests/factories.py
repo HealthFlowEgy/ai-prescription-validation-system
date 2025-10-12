@@ -3,7 +3,7 @@ Test data factories using factory_boy
 """
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import factory
 from factory import fuzzy

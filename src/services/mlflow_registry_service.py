@@ -13,12 +13,11 @@ import logging
 import os
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import mlflow
 import mlflow.pytorch
 import mlflow.sklearn
-from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 
 logger = logging.getLogger(__name__)

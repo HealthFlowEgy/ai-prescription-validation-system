@@ -159,7 +159,7 @@ def logout():
             "refresh_token": "eyJ..."
         }
     """
-    from src.auth.jwt_service import jwt_service, require_auth
+    from src.auth.jwt_service import jwt_service
     from src.models.audit_log import AuditLog
 
     # Get tokens
@@ -203,7 +203,6 @@ def get_current_user():
             "permissions": [...]
         }
     """
-    from src.auth.jwt_service import require_auth
     from src.auth.rbac import RBACService
     from src.models.user import User
 

@@ -1,9 +1,6 @@
-import json
 import logging
-import re
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import requests
 
