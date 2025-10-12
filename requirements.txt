@@ -248,7 +248,7 @@ invoke==2.2.0
 pylint==3.0.3
 autopep8==2.0.4
 vulture==2.10
-safety==2.3.5
+safety==3.6.2  # Upgraded for packaging>=22.0 compatibility
 
 # ============================================================================
 # PRODUCTION MONITORING
