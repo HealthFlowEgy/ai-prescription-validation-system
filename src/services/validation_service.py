@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
 
-
 from models.database import db
 from src.models.prescription import (
     Medication,
