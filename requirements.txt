@@ -113,8 +113,8 @@ elastic-apm==6.20.0
 # CONFIGURATION & ENVIRONMENT
 # ============================================================================
 python-dotenv==1.0.0
-pydantic==2.5.2
-pydantic-settings==2.1.0
+pydantic==2.10.6  # Upgraded for safety 3.6.2 compatibility (requires >=2.6.0)
+pydantic-settings==2.7.1  # Upgraded to match pydantic version
 click==8.1.7
 python-decouple==3.8
 
