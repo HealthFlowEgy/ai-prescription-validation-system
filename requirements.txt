@@ -353,3 +353,30 @@ qrcode[pil]==7.4.2
 
 # Load testing dependencies
 locust==2.15.1
+
+
+# ============================================================================
+# MISSING DEPENDENCIES - Added December 8, 2025
+# ============================================================================
+
+# Property-based testing
+hypothesis==6.92.1
+
+# AWS SDK for cloud storage and services
+boto3==1.34.10
+botocore==1.34.10
+
+# Chaos engineering
+chaostoolkit==1.17.0
+chaostoolkit-lib==1.40.0
+chaostoolkit-kubernetes==0.32.0
+
+# Additional testing utilities
+pytest-timeout==2.2.0
+pytest-xdist==3.5.0
+
+# Monitoring and observability
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+opentelemetry-instrumentation-flask==0.43b0
+
