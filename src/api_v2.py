@@ -3,24 +3,25 @@ Enhanced Flask API with Model Governance, Monitoring, and Clinical Validation
 Integrates all Sprint 3 services
 """
 
-from flask import Flask, request, jsonify, g
-from flask_cors import CORS
-from functools import wraps
-import time
 import logging
-from typing import Dict, Optional
-from datetime import datetime
+import time
 import uuid
+from datetime import datetime
+from functools import wraps
+from typing import Dict, Optional
+
+from clinical_validation import ClinicalValidationService
+from flask import Flask, g, jsonify, request
+from flask_cors import CORS
 
 # Import Sprint 3 services
-from mlflow_registry import ModelRegistry, ModelPerformanceTracker
-from clinical_validation import ClinicalValidationService
+from mlflow_registry import ModelPerformanceTracker, ModelRegistry
 from monitoring_service import MonitoringService
 from phi_encryption import (
-    EncryptionService,
-    PHIAnonymizer,
     AuditLogger,
     DataRetentionService,
+    EncryptionService,
+    PHIAnonymizer,
 )
 
 # Configure logging

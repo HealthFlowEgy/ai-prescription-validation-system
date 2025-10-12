@@ -16,58 +16,59 @@ Author: HealthFlow Development Team
 License: MIT
 """
 
+import asyncio
+import logging
 import os
 import sys
-import logging
-import asyncio
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
-
-# Flask and extensions
-from flask import Flask, request, jsonify, g
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_caching import Cache
-from flask_jwt_extended import JWTManager
-from flask_mail import Mail
-
-# Configuration and utilities
-from config.settings import Config, get_config
-from config.database import init_database
-from config.security import SecurityConfig
-from utils.logging import setup_logging
-from utils.encryption import EncryptionService
-from utils.validation import InputValidator
-
-# Services
-from services.identity_service import IdentityService
-from services.demographics_service import DemographicsService
-from services.prescription_processor import PrescriptionProcessor
-from services.ai_interaction_engine import AIInteractionEngine
-from services.fhir_service import FHIRService
-from services.analytics_service import AnalyticsService
-from services.security_service import SecurityService
-
-# Routes
-from routes.auth import auth_bp
-from routes.prescription import prescription_bp
-from routes.fhir import fhir_bp
-from routes.analytics import analytics_bp
-from routes.admin import admin_bp
-
-# Models (import after db initialization)
-from models.user import User
-from models.prescription import Prescription
-from models.audit import AuditEvent
+from typing import Any, Dict, Optional
 
 # Monitoring and observability
 import prometheus_client
-from prometheus_client import Counter, Histogram, Gauge
 import structlog
+
+# Flask and extensions
+from flask import Flask, g, jsonify, request
+from flask_caching import Cache
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_login import LoginManager
+from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from prometheus_client import Counter, Gauge, Histogram
+
+from config.database import init_database
+from config.security import SecurityConfig
+
+# Configuration and utilities
+from config.settings import Config, get_config
+from models.audit import AuditEvent
+from models.prescription import Prescription
+
+# Models (import after db initialization)
+from models.user import User
+from routes.admin import admin_bp
+from routes.analytics import analytics_bp
+
+# Routes
+from routes.auth import auth_bp
+from routes.fhir import fhir_bp
+from routes.prescription import prescription_bp
+from services.ai_interaction_engine import AIInteractionEngine
+from services.analytics_service import AnalyticsService
+from services.demographics_service import DemographicsService
+from services.fhir_service import FHIRService
+
+# Services
+from services.identity_service import IdentityService
+from services.prescription_processor import PrescriptionProcessor
+from services.security_service import SecurityService
+from utils.encryption import EncryptionService
+from utils.logging import setup_logging
+from utils.validation import InputValidator
 
 # ============================================================================
 # GLOBAL VARIABLES AND METRICS

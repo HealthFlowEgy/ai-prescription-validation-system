@@ -2,18 +2,19 @@
 Test data factories using factory_boy
 """
 
+import random
+from datetime import datetime, timedelta
+
 import factory
 from factory import fuzzy
-from datetime import datetime, timedelta
-import random
 
-from models.user import User
 from models.prescription import (
-    Prescription,
-    ValidationStatus,
-    ProcessingStatus,
     InputFormat,
+    Prescription,
+    ProcessingStatus,
+    ValidationStatus,
 )
+from models.user import User
 
 
 class UserFactory(factory.Factory):

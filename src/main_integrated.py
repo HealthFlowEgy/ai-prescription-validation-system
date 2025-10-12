@@ -16,24 +16,25 @@ Author: HealthFlow Development Team
 License: MIT
 """
 
+import logging
 import os
 import sys
-import logging
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 # Flask and extensions
-from flask import Flask, request, jsonify, g
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask import Flask, g, jsonify, request
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+
+from config.database import DatabaseConfig
 
 # Production-ready configuration
 from config.production import get_config
-from config.database import DatabaseConfig
 
 # Production services
 from services.auth_service import AuthService
@@ -42,12 +43,12 @@ from utils.error_handlers import register_error_handlers
 
 # Existing services (preserved)
 try:
-    from services.identity_service import IdentityService
-    from services.demographics_service import DemographicsService
-    from services.prescription_processor import PrescriptionProcessor
     from services.ai_interaction_engine import AIInteractionEngine
-    from services.fhir_service import FHIRService
     from services.analytics_service import AnalyticsService
+    from services.demographics_service import DemographicsService
+    from services.fhir_service import FHIRService
+    from services.identity_service import IdentityService
+    from services.prescription_processor import PrescriptionProcessor
 except ImportError as e:
     logging.warning(f"Some services not available: {e}")
 
@@ -57,10 +58,10 @@ from routes.health_routes import health_bp
 
 # Routes - Existing (preserved)
 try:
-    from routes.prescription import prescription_bp
-    from routes.fhir import fhir_bp
-    from routes.analytics import analytics_bp
     from routes.admin import admin_bp
+    from routes.analytics import analytics_bp
+    from routes.fhir import fhir_bp
+    from routes.prescription import prescription_bp
 except ImportError as e:
     logging.warning(f"Some routes not available: {e}")
     prescription_bp = None
@@ -70,8 +71,8 @@ except ImportError as e:
 
 # Models
 from models.database import db
-from models.user import User
 from models.prescription import Prescription
+from models.user import User
 
 # ============================================================================
 # GLOBAL VARIABLES

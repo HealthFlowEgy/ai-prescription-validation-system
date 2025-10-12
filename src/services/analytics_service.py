@@ -3,13 +3,13 @@ Advanced Analytics and Reporting Engine
 Provides insights, metrics, and predictive analytics for prescription workflows
 """
 
-from typing import Dict, List, Optional, Tuple
+import logging
+import statistics
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from collections import defaultdict
-import logging
-import statistics
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

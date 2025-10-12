@@ -4,12 +4,13 @@ Supports Epic, Cerner, and Allscripts EHR systems
 Implements OAuth2 authentication and SMART on FHIR
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-import logging
-import requests
 import json
+import logging
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 

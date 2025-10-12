@@ -3,11 +3,12 @@ Unit tests for AuthService
 Tests password hashing, JWT tokens, and authentication logic
 """
 
-import pytest
 import os
+import sys
 import time
 from datetime import datetime, timedelta
-import sys
+
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))

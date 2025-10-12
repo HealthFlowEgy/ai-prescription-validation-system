@@ -3,11 +3,12 @@ Rate Limiting Configuration
 File: src/config/rate_limiting.py
 """
 
+import logging
 import os
+
+import redis
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import redis
-import logging
 
 logger = logging.getLogger(__name__)
 

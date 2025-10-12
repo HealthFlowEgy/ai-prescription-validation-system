@@ -2,10 +2,13 @@
 Enhanced User Model with Production-Ready Features
 """
 
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
 import enum
+from datetime import datetime, timezone
+
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Boolean, Column, DateTime
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Integer, String
 
 db = SQLAlchemy()
 

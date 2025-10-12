@@ -3,12 +3,13 @@ Security Middleware for Flask Application
 Implements security headers, rate limiting, and input validation
 """
 
+import logging
 import re
 from functools import wraps
-from flask import request, jsonify, g
+
+from flask import g, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import logging
 
 logger = logging.getLogger(__name__)
 

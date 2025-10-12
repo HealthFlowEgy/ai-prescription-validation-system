@@ -4,9 +4,9 @@ Ensures proper database is used in each environment
 File: src/config/database_enforcer.py
 """
 
+import logging
 import os
 import sys
-import logging
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)

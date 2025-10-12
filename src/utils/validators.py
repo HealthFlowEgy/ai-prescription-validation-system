@@ -3,9 +3,12 @@ Shared utility modules to eliminate duplicated code.
 Extract common patterns into reusable functions.
 """
 
-from typing import Optional, List
 import re
-from email_validator import validate_email as _validate_email, EmailNotValidError
+from typing import List, Optional
+
+from email_validator import EmailNotValidError
+from email_validator import validate_email as _validate_email
+
 from src.config.constants import SecurityConstants, ValidationConstants
 
 

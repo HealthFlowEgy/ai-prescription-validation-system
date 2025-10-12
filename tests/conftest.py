@@ -4,8 +4,9 @@ Pytest configuration and shared fixtures
 
 import os
 import sys
-import pytest
 from datetime import datetime
+
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -19,14 +20,15 @@ os.environ["REDIS_URL"] = "redis://localhost:6379/1"
 os.environ["SKIP_DB_VALIDATION"] = "true"
 
 from flask import Flask
+
 from models.database import db as _db
-from models.user import User
 from models.prescription import (
-    Prescription,
-    ValidationStatus,
-    ProcessingStatus,
     InputFormat,
+    Prescription,
+    ProcessingStatus,
+    ValidationStatus,
 )
+from models.user import User
 
 
 @pytest.fixture(scope="session")

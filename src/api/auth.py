@@ -3,10 +3,11 @@ Authentication API endpoints.
 Provides login, logout, token refresh, and password management.
 """
 
-from flask import Blueprint, request, jsonify, g
-from datetime import datetime
-import bcrypt
 import logging
+from datetime import datetime
+
+import bcrypt
+from flask import Blueprint, g, jsonify, request
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +40,9 @@ def login():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
-    from src.models.audit_log import AuditLog
     from src.database import db
+    from src.models.audit_log import AuditLog
+    from src.models.user import User
 
     data = request.json
     email = data.get("email", "").strip().lower()
@@ -263,9 +264,9 @@ def change_password():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
-    from src.models.audit_log import AuditLog
     from src.database import db
+    from src.models.audit_log import AuditLog
+    from src.models.user import User
 
     # Authenticate user
     auth_header = request.headers.get("Authorization")

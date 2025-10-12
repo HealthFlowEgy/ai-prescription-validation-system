@@ -4,8 +4,9 @@ Implements confidence thresholds, drug interactions, and safety checks
 """
 
 import logging
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import requests
 
 from src.models.database import db

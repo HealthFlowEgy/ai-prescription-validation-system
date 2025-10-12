@@ -4,12 +4,14 @@ File: src/services/auth_service.py
 """
 
 import os
-import jwt
-import bcrypt
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Tuple
 from functools import wraps
-from flask import request, jsonify, current_app
+from typing import Dict, Optional, Tuple
+
+import bcrypt
+import jwt
+from flask import current_app, jsonify, request
+
 from models.database import db
 from models.user import User
 from utils.password_validator import PasswordValidator

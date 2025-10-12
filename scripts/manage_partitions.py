@@ -3,10 +3,11 @@ Automated partition management script.
 Creates new partitions and drops old ones.
 """
 
-import psycopg2
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 import os
+from datetime import datetime, timedelta
+
+import psycopg2
+from dateutil.relativedelta import relativedelta
 
 
 def create_future_partitions(conn, months_ahead=3):

@@ -4,18 +4,19 @@ Comprehensive database migration script
 Handles migration from SQLite to PostgreSQL and schema updates
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import sessionmaker
 import argparse
 import logging
 from datetime import datetime
+
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import sessionmaker
 
 # Configure logging
 logging.basicConfig(
@@ -83,16 +84,15 @@ class DatabaseMigrator:
 
         try:
             # Import models to create schema
-            from models.user import db, User
-            from models.prescription import (
-                Prescription,
-                Medication,
-                ValidationResult,
-                AuditLog,
-            )
-
             # Create all tables
             from main import app
+            from models.prescription import (
+                AuditLog,
+                Medication,
+                Prescription,
+                ValidationResult,
+            )
+            from models.user import User, db
 
             with app.app_context():
                 db.create_all()

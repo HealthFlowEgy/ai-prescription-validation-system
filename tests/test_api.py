@@ -3,19 +3,19 @@
 API tests for AI-Based Digital Prescription Validation System
 """
 
+import json
 import os
 import sys
-import unittest
-import json
 import tempfile
+import unittest
 from io import BytesIO
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from main import app
-from models.user import db, User
-from models.prescription import Prescription, ValidationStatus, ProcessingStatus
+from models.prescription import Prescription, ProcessingStatus, ValidationStatus
+from models.user import User, db
 
 
 class APITestCase(unittest.TestCase):
@@ -150,8 +150,8 @@ class ValidationServiceTestCase(unittest.TestCase):
 
     def test_drug_interaction_checker(self):
         """Test drug interaction checking"""
-        from services.validation_service import DrugInteractionChecker
         from models.prescription import Medication
+        from services.validation_service import DrugInteractionChecker
 
         checker = DrugInteractionChecker()
 
@@ -167,8 +167,8 @@ class ValidationServiceTestCase(unittest.TestCase):
 
     def test_dosage_validator(self):
         """Test dosage validation"""
-        from services.validation_service import DosageValidator
         from models.prescription import Medication
+        from services.validation_service import DosageValidator
 
         validator = DosageValidator()
 

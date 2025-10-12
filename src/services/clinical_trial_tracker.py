@@ -14,24 +14,26 @@ Author: HealthFlow Clinical Research Team
 Date: 2025-10-14
 """
 
-from datetime import datetime
-from typing import List, Dict, Any, Optional, Tuple
-from enum import Enum
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    DateTime,
-    Float,
-    Boolean,
-    ForeignKey,
-    Text,
-    JSON,
-)
-from sqlalchemy.orm import relationship
-from src.models.database import db
 import logging
 import statistics
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
+from src.models.database import db
 
 logger = logging.getLogger(__name__)
 
@@ -772,7 +774,8 @@ Report Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
 # API Routes for Clinical Trial Management
 # ============================================================================
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
+
 from src.services.auth_service import require_auth, require_role
 
 trial_bp = Blueprint("trials", __name__, url_prefix="/api/trials")

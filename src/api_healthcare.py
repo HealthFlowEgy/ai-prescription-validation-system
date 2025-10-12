@@ -3,28 +3,28 @@ Sprint 4 Enhanced API with Healthcare Integration Standards
 Integrates FHIR, HL7, and EHR system connectors
 """
 
-from flask import Flask, request, jsonify, Response, g
-from flask_cors import CORS
-from functools import wraps
-import logging
-from typing import Dict, Optional
-from datetime import datetime
 import json
-
-# Import Sprint 4 services
-from fhir_integration import FHIRConverter, FHIRValidator, FHIRResourceBuilder
-from hl7_integration import HL7MessageBuilder, HL7Parser, HL7Validator, HL7MessageQueue
-from ehr_integration import (
-    EHRIntegrationService,
-    EHRAuthenticator,
-    EpicConnector,
-    CernerConnector,
-)
+import logging
+from datetime import datetime
+from functools import wraps
+from typing import Dict, Optional
 
 # Import Sprint 3 services
 from clinical_validation import ClinicalValidationService
+from ehr_integration import (
+    CernerConnector,
+    EHRAuthenticator,
+    EHRIntegrationService,
+    EpicConnector,
+)
+
+# Import Sprint 4 services
+from fhir_integration import FHIRConverter, FHIRResourceBuilder, FHIRValidator
+from flask import Flask, Response, g, jsonify, request
+from flask_cors import CORS
+from hl7_integration import HL7MessageBuilder, HL7MessageQueue, HL7Parser, HL7Validator
 from monitoring_service import MonitoringService
-from phi_encryption import EncryptionService, PHIAnonymizer, AuditLogger
+from phi_encryption import AuditLogger, EncryptionService, PHIAnonymizer
 
 # Configure logging
 logging.basicConfig(

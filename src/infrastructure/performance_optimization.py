@@ -3,17 +3,18 @@ Performance Optimization and Load Testing System
 Monitors performance, identifies bottlenecks, and conducts load testing
 """
 
-import time
 import asyncio
-import aiohttp
-from typing import Dict, List, Optional, Callable
+import concurrent.futures
+import logging
+import statistics
+import time
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import defaultdict
-import statistics
-import logging
+from typing import Callable, Dict, List, Optional
+
+import aiohttp
 import psutil
-import concurrent.futures
 
 logger = logging.getLogger(__name__)
 

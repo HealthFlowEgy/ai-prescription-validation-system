@@ -1,10 +1,11 @@
 import json
 import logging
-import requests
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
+
+import requests
 
 # Configure logging
 logger = logging.getLogger(__name__)

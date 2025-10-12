@@ -3,6 +3,7 @@ Tests for Security Middleware
 """
 
 import pytest
+
 from src.middleware.security import InputValidator
 
 

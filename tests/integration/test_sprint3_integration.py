@@ -3,20 +3,21 @@ Sprint 3 Integration Tests
 Tests for Model Governance, Clinical Validation, Monitoring, and PHI Encryption
 """
 
-import pytest
+import json
 import time
 from datetime import datetime, timedelta
-import json
+
+import pytest
+from clinical_validation import ClinicalValidationService, ValidationSeverity
 
 # Import services
-from mlflow_registry import ModelRegistry, ModelPerformanceTracker
-from clinical_validation import ClinicalValidationService, ValidationSeverity
-from monitoring_service import MonitoringService, MetricsCollector
+from mlflow_registry import ModelPerformanceTracker, ModelRegistry
+from monitoring_service import MetricsCollector, MonitoringService
 from phi_encryption import (
-    EncryptionService,
-    PHIAnonymizer,
     AuditLogger,
     DataRetentionService,
+    EncryptionService,
+    PHIAnonymizer,
 )
 
 

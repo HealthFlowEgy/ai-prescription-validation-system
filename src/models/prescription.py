@@ -1,7 +1,8 @@
-from models.database import db
+import json
 from datetime import datetime
 from enum import Enum
-import json
+
+from models.database import db
 
 
 class ValidationStatus(Enum):

@@ -3,14 +3,15 @@ JWT Authentication Service with refresh token support.
 Implements secure token generation, validation, and revocation.
 """
 
-import jwt
-import uuid
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from functools import wraps
-from flask import request, jsonify, g
 import logging
 import os
+import uuid
+from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any, Dict, Optional
+
+import jwt
+from flask import g, jsonify, request
 
 logger = logging.getLogger(__name__)
 

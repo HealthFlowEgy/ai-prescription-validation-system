@@ -3,10 +3,10 @@ Hybrid OCR Service - Combines Donut Transformer and Tesseract OCR
 Provides best-in-class OCR for medical prescriptions
 """
 
-import os
 import logging
-from typing import Dict, Any, Optional
+import os
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

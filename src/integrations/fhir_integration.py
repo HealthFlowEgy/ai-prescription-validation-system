@@ -4,25 +4,25 @@ Implements HL7 FHIR R4 standard for healthcare data exchange
 Supports MedicationRequest, Patient, Practitioner, and Organization resources
 """
 
-from typing import Dict, List, Optional, Union
-from datetime import datetime
-from dataclasses import dataclass
-import logging
 import json
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional, Union
 
-from fhir.resources.medicationrequest import MedicationRequest
-from fhir.resources.patient import Patient
-from fhir.resources.practitioner import Practitioner
-from fhir.resources.organization import Organization
-from fhir.resources.medication import Medication
-from fhir.resources.dosage import Dosage
+from fhir.resources.address import Address
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
-from fhir.resources.identifier import Identifier
-from fhir.resources.humanname import HumanName
 from fhir.resources.contactpoint import ContactPoint
-from fhir.resources.address import Address
+from fhir.resources.dosage import Dosage
+from fhir.resources.humanname import HumanName
+from fhir.resources.identifier import Identifier
+from fhir.resources.medication import Medication
+from fhir.resources.medicationrequest import MedicationRequest
+from fhir.resources.organization import Organization
+from fhir.resources.patient import Patient
+from fhir.resources.practitioner import Practitioner
 from fhir.resources.reference import Reference
 
 logger = logging.getLogger(__name__)

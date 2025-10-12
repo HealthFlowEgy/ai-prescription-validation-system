@@ -3,13 +3,15 @@ Authentication API routes
 File: src/routes/auth_routes.py
 """
 
-from flask import Blueprint, request, jsonify
-from datetime import datetime
-from services.auth_service import AuthService, token_required
-from models.database import db
-from models.user import User
-from models.prescription import AuditLog
 import re
+from datetime import datetime
+
+from flask import Blueprint, jsonify, request
+
+from models.database import db
+from models.prescription import AuditLog
+from models.user import User
+from services.auth_service import AuthService, token_required
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 

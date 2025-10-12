@@ -3,15 +3,16 @@ PHI (Protected Health Information) Field-Level Encryption Service
 Implements HIPAA-compliant encryption for sensitive patient data
 """
 
+import base64
+import logging
+import os
+from typing import Optional
+
 from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
-from cryptography.hazmat.backends import default_backend
-from sqlalchemy import TypeDecorator, String
-import base64
-import os
-import logging
-from typing import Optional
+from sqlalchemy import String, TypeDecorator
 
 logger = logging.getLogger(__name__)
 

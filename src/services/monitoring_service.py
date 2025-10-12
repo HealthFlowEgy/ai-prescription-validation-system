@@ -3,14 +3,15 @@ Monitoring and observability service with Sentry integration
 File: src/services/monitoring_service.py
 """
 
+import logging
 import os
 import time
-import psutil
 from datetime import datetime, timedelta
-from typing import Dict, Optional, List
 from functools import wraps
-from flask import request, g
-import logging
+from typing import Dict, List, Optional
+
+import psutil
+from flask import g, request
 
 # Optional Sentry import
 try:

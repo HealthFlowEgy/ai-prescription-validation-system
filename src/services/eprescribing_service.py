@@ -4,13 +4,13 @@ Implements NCPDP SCRIPT 2017071 standard for electronic prescribing
 Supports NewRx, RxChange, RxFill, Status, and Error messages
 """
 
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-from dataclasses import dataclass
-from enum import Enum
-import xml.etree.ElementTree as ET
 import logging
 import uuid
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

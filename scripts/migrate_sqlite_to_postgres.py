@@ -14,20 +14,21 @@ Features:
 - Backup creation
 """
 
-import sys
-import os
 import argparse
 import logging
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy import create_engine, MetaData, Table, inspect
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
 import shutil
+
+from sqlalchemy import MetaData, Table, create_engine, inspect
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import sessionmaker
 
 # Setup logging
 logging.basicConfig(

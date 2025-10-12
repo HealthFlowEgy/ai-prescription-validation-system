@@ -11,15 +11,15 @@ Usage:
     python scripts/verify_integration.py --report-file verification_report.md
 """
 
-import os
-import sys
-import subprocess
+import argparse
 import importlib
 import json
-from pathlib import Path
+import os
+import subprocess
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Tuple
-import argparse
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

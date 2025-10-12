@@ -4,12 +4,13 @@ Integrates the Medical-Prescription-OCR module (Donut transformer)
 Repository: https://github.com/HealthFlowEgy/Medical-Prescription-OCR
 """
 
+import logging
 import os
 import sys
-import torch
-import logging
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple
+
+import torch
 from PIL import Image
 
 # Add medical_ocr module to path
@@ -17,7 +18,7 @@ MEDICAL_OCR_PATH = Path(__file__).parent.parent / "ml_models" / "medical_ocr"
 if str(MEDICAL_OCR_PATH) not in sys.path:
     sys.path.insert(0, str(MEDICAL_OCR_PATH))
 
-from transformers import VisionEncoderDecoderModel, DonutProcessor, pipeline
+from transformers import DonutProcessor, VisionEncoderDecoderModel, pipeline
 
 logger = logging.getLogger(__name__)
 

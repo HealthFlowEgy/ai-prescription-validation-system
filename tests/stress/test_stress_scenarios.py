@@ -3,11 +3,12 @@ Stress testing scenarios for load testing.
 Tests system behavior under extreme load conditions.
 """
 
+import concurrent.futures
+import time
+
 import pytest
 import requests
-import time
-from locust import HttpUser, task, between
-import concurrent.futures
+from locust import HttpUser, between, task
 
 
 class StressTestUser(HttpUser):

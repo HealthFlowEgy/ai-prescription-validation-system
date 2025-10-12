@@ -3,10 +3,10 @@ HIPAA-compliant Data Retention Policy Service.
 Automates data lifecycle management and retention policies.
 """
 
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
-from enum import Enum
 import logging
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -307,7 +307,7 @@ class DataRetentionService:
 
 
 # Data Retention API endpoints
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 
 retention_bp = Blueprint("retention", __name__, url_prefix="/api/retention")
 

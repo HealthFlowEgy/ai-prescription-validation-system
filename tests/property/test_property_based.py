@@ -3,10 +3,12 @@ Property-based testing using Hypothesis.
 Generates random test cases to find edge cases.
 """
 
-from hypothesis import given, strategies as st, settings, HealthCheck
-from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
 import pytest
-from src.utils.validators import PasswordValidator, EmailValidator, ValidationError
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+
+from src.utils.validators import EmailValidator, PasswordValidator, ValidationError
 
 
 class TestPasswordValidation:

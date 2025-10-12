@@ -3,10 +3,10 @@ HIPAA-compliant Consent Management System.
 Tracks patient consent for data usage and sharing.
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict
-from enum import Enum
 import logging
+from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +67,8 @@ class ConsentManagementService:
         Returns:
             Consent record
         """
-        from src.models.consent import Consent
         from src.database import db
+        from src.models.consent import Consent
 
         consent = Consent(
             patient_id=patient_id,
@@ -159,8 +159,8 @@ class ConsentManagementService:
         Returns:
             True if consent was revoked
         """
-        from src.models.consent import Consent
         from src.database import db
+        from src.models.consent import Consent
 
         # Get active consent
         consent = (
@@ -272,7 +272,7 @@ class ConsentManagementService:
 
 
 # Consent API endpoints
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 
 consent_bp = Blueprint("consent", __name__, url_prefix="/api/consent")
 

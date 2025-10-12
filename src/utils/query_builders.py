@@ -1,8 +1,9 @@
 """Common database query patterns."""
 
+from typing import List, Optional, Type, TypeVar
+
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
-from typing import Optional, List, Type, TypeVar
 
 T = TypeVar("T")
 

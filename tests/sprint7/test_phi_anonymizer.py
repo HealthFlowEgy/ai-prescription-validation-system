@@ -2,8 +2,10 @@
 Tests for PHI Anonymization Filter
 """
 
-import pytest
 import logging
+
+import pytest
+
 from src.utils.phi_anonymizer import PHIAnonymizer, redact_phi
 
 

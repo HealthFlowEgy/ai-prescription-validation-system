@@ -3,9 +3,9 @@ PHI Anonymization Filter for HIPAA-Compliant Logging
 Removes Protected Health Information from all log messages
 """
 
-import re
 import logging
-from typing import List, Tuple, Pattern
+import re
+from typing import List, Pattern, Tuple
 
 
 class PHIAnonymizer(logging.Filter):

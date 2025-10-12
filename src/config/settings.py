@@ -16,10 +16,10 @@ Version: 2.0.0
 import os
 import secrets
 from datetime import timedelta
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from pydantic import BaseSettings, validator, Field
+from pydantic import BaseSettings, Field, validator
 from pydantic_settings import SettingsConfigDict
 
 

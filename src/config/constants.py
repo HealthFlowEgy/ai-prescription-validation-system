@@ -3,8 +3,8 @@ Configuration constants to replace magic numbers throughout codebase.
 All hardcoded values should reference these constants.
 """
 
-from enum import Enum
 from datetime import timedelta
+from enum import Enum
 
 
 class SecurityConstants:

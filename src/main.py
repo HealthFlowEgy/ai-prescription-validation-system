@@ -5,34 +5,36 @@ Integrated with authentication, monitoring, and error handling
 Version: 2.1.0 (Production Ready)
 """
 
+import logging
 import os
 import sys
-import logging
 from datetime import datetime
-from flask import Flask, request, jsonify, g
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import HTTPException
 
 # Add src to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from config.database_enforcer import get_database_status, validate_database_on_startup
+
 # Import production configuration
 from config.production_simple import get_config
-from config.database_enforcer import validate_database_on_startup, get_database_status
 
 # Import models
 from models.database import db
 from models.user import User
 
+# Import routes
+from routes.health_routes import health_bp
+
 # Import services
 from services.auth_service import AuthService
 from services.monitoring_service import MonitoringService, metrics_collector
 from services.nlp_service import NLPService
-
-# Import routes
-from routes.health_routes import health_bp
 
 # Import error handlers
 from utils.error_handlers import register_error_handlers

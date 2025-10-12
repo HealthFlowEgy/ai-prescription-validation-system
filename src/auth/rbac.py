@@ -3,11 +3,12 @@ Role-Based Access Control (RBAC) system for HealthFlow.
 Implements fine-grained permissions and role management.
 """
 
-from enum import Enum
-from typing import List, Set
-from functools import wraps
-from flask import g, jsonify
 import logging
+from enum import Enum
+from functools import wraps
+from typing import List, Set
+
+from flask import g, jsonify
 
 logger = logging.getLogger(__name__)
 

@@ -3,15 +3,16 @@ JWT Token Manager with blacklisting and enhanced security
 File: src/utils/token_manager.py
 """
 
-import os
-import jwt
-import uuid
-import redis
 import json
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Tuple
-from flask import request
 import logging
+import os
+import uuid
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple
+
+import jwt
+import redis
+from flask import request
 
 logger = logging.getLogger(__name__)
 

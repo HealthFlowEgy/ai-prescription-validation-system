@@ -3,15 +3,16 @@ Production Health Checks and Monitoring
 Provides detailed system health status for monitoring and alerting
 """
 
-import time
-import psutil
-from datetime import datetime
-from typing import Dict, Any, List
-from flask import jsonify
 import logging
+import time
+from datetime import datetime
+from typing import Any, Dict, List
+
+import psutil
+import redis
+from flask import jsonify
 
 from src.models.database import db
-import redis
 
 logger = logging.getLogger(__name__)
 

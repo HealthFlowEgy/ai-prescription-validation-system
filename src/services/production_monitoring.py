@@ -3,12 +3,12 @@ Production Monitoring and Alerting Service
 Implements real-time monitoring, drift detection, and alert management
 """
 
-from typing import Dict, List, Optional
+import json
+import logging
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from collections import deque
-import logging
-import json
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

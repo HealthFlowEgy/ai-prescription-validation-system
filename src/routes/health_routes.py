@@ -3,12 +3,14 @@ Enhanced health check and metrics endpoints
 File: src/routes/health_routes.py
 """
 
-from flask import Blueprint, jsonify
-from datetime import datetime
-from models.database import db
-from services.monitoring_service import metrics_collector, get_metrics_summary
-from services.auth_service import token_required, role_required
 import os
+from datetime import datetime
+
+from flask import Blueprint, jsonify
+
+from models.database import db
+from services.auth_service import role_required, token_required
+from services.monitoring_service import get_metrics_summary, metrics_collector
 
 health_bp = Blueprint("health", __name__, url_prefix="/api")
 

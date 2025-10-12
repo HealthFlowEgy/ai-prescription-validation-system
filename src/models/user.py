@@ -3,6 +3,7 @@ User model with authentication support
 """
 
 from datetime import datetime
+
 from models.database import db
 
 

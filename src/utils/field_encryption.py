@@ -7,25 +7,26 @@ Run with:
     pytest tests/sprint1/ -v --cov=src --cov-report=html
 """
 
-import pytest
+import json
 import os
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-import json
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 import redis
-from unittest.mock import Mock, patch, MagicMock
+
+from src.encryption.encrypted_types import EncryptedDate, EncryptedString, EncryptedText
 
 # Import modules to test
 from src.encryption.field_encryption import (
+    DecryptionError,
+    EncryptionError,
     EncryptionKeyManager,
     FieldEncryptionService,
-    EncryptionError,
-    DecryptionError,
 )
-from src.encryption.encrypted_types import EncryptedString, EncryptedText, EncryptedDate
 from src.models.prescription import Prescription, User
-
 
 # ============================================
 # Fixtures
@@ -69,7 +70,7 @@ def encryption_service(key_manager):
 @pytest.fixture
 def test_database():
     """Create test database."""
-    from src.database import db, create_app
+    from src.database import create_app, db
 
     app = create_app("testing")
     with app.app_context():
@@ -108,6 +109,7 @@ class TestEncryptionKeyManager:
     def test_get_previous_keys(self, key_manager, monkeypatch):
         """Test retrieving previous encryption keys for rotation."""
         import base64
+
         from cryptography.fernet import Fernet
 
         prev_key_1 = Fernet.generate_key()
@@ -132,8 +134,9 @@ class TestEncryptionKeyManager:
         assert len(key) > 0
 
         # Verify it's a valid Fernet key
-        from cryptography.fernet import Fernet
         import base64
+
+        from cryptography.fernet import Fernet
 
         key_bytes = base64.b64decode(key.encode())
         fernet = Fernet(key_bytes)
@@ -230,8 +233,9 @@ class TestFieldEncryptionService:
 
     def test_decryption_with_wrong_key_fails(self, redis_client):
         """Test that decryption fails with wrong key."""
-        from cryptography.fernet import Fernet
         import base64
+
+        from cryptography.fernet import Fernet
 
         # Create two separate encryption services with different keys
         key1 = Fernet.generate_key()
@@ -304,8 +308,9 @@ class TestEncryptedTypes:
 
     def test_encrypted_date_roundtrip(self, encryption_service, monkeypatch):
         """Test encrypting and decrypting dates."""
-        from src.encryption import field_encryption
         from datetime import date
+
+        from src.encryption import field_encryption
 
         monkeypatch.setattr(field_encryption, "_encryption_service", encryption_service)
 
@@ -534,7 +539,7 @@ class TestDatabaseBackupService:
 
     def test_retention_policy_keeps_correct_backups(self):
         """Test that retention policy keeps the right backups."""
-        from scripts.backup_service import DatabaseBackupService, BackupMetadata
+        from scripts.backup_service import BackupMetadata, DatabaseBackupService
 
         # Create fake backups spanning 90 days
         now = datetime.utcnow()

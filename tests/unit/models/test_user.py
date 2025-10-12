@@ -2,8 +2,10 @@
 Unit tests for User model
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
+
 from models.user import User
 
 

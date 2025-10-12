@@ -3,13 +3,14 @@ MLflow Model Registry Service for HealthFlow AI
 Handles model versioning, deployment, and lifecycle management
 """
 
+import json
+import logging
+from datetime import datetime
+from typing import Dict, List, Optional
+
 import mlflow
 import mlflow.pytorch
 from mlflow.tracking import MlflowClient
-from typing import Dict, Optional, List
-import logging
-from datetime import datetime
-import json
 
 logger = logging.getLogger(__name__)
 

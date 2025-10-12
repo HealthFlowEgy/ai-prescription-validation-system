@@ -7,13 +7,15 @@ Author: HealthFlow Security Team
 Date: 2025-10-14
 """
 
-import pytest
 import os
+
+import pytest
+
 from src.utils.encryption import (
-    EncryptionService,
-    EncryptionError,
-    DecryptionError,
     PHI_FIELDS,
+    DecryptionError,
+    EncryptionError,
+    EncryptionService,
 )
 
 

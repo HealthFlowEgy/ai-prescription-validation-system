@@ -3,11 +3,12 @@ Chaos engineering tests to validate system resilience.
 Tests system behavior under failure conditions.
 """
 
+import random
+import time
+
 import pytest
 import requests
-import time
 from kubernetes import client, config
-import random
 
 
 class ChaosTestBase:

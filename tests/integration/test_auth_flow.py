@@ -3,16 +3,17 @@ Integration tests for authentication flow
 Tests complete registration, login, and token refresh workflows
 """
 
-import pytest
+import json
 import os
 import sys
-import json
+
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from main import create_app
-from models.user import db, User
+from models.user import User, db
 
 
 @pytest.fixture

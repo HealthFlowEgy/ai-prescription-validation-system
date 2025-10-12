@@ -1,19 +1,20 @@
 import json
 import logging
-import requests
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime, date
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Dict, List, Optional, Tuple
 
+import requests
+
+from models.database import db
 from src.models.prescription import (
-    Prescription,
     Medication,
+    Prescription,
     ValidationResult,
     ValidationStatus,
 )
-from models.database import db
-from src.services.snowstorm_service import SnowstormService, SnowstormDrugInteraction
+from src.services.snowstorm_service import SnowstormDrugInteraction, SnowstormService
 
 # Configure logging
 logger = logging.getLogger(__name__)

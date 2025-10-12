@@ -3,14 +3,15 @@ Comprehensive Input Validation
 File: src/utils/input_validator.py
 """
 
+import logging
 import os
 import re
-import magic
-from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage
-from typing import Tuple, Optional, List
 from dataclasses import dataclass
-import logging
+from typing import List, Optional, Tuple
+
+import magic
+from werkzeug.datastructures import FileStorage
+from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 

@@ -3,17 +3,17 @@ Centralized Logging & Monitoring Configuration
 Implements ELK Stack integration and Prometheus metrics
 """
 
-import os
-import logging
 import json
-from datetime import datetime
-from typing import Dict, Any, Optional
-import structlog
-from pythonjsonlogger import jsonlogger
-from prometheus_client import Counter, Histogram, Gauge, Info
+import logging
+import os
 import time
+from datetime import datetime
 from functools import wraps
+from typing import Any, Dict, Optional
 
+import structlog
+from prometheus_client import Counter, Gauge, Histogram, Info
+from pythonjsonlogger import jsonlogger
 
 # ============================================
 # Structured Logging Configuration
@@ -120,8 +120,9 @@ def log_request_middleware(app):
 
     @app.before_request
     def log_request():
-        from flask import request, g
         import time
+
+        from flask import g, request
 
         g.start_time = time.time()
         g.request_id = request.headers.get("X-Request-ID", os.urandom(16).hex())
@@ -427,8 +428,8 @@ def setup_metrics_endpoint(app):
     """
     Set up Prometheus metrics endpoint.
     """
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from flask import Response
+    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
     @app.route("/metrics")
     def metrics():

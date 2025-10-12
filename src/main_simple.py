@@ -1,9 +1,10 @@
+import logging
 import os
 import sys
-from flask import Flask, request, jsonify, send_from_directory
+
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

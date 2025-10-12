@@ -3,12 +3,13 @@ HIPAA-Compliant Audit Logging Service
 Tracks all PHI access and system events for compliance
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, g, session
-from typing import List, Optional, Dict, Any
-import logging
+from typing import Any, Dict, List, Optional
+
+from flask import g, request, session
 
 from src.models.database import db
 

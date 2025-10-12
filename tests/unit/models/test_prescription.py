@@ -2,13 +2,15 @@
 Unit tests for Prescription model
 """
 
+from datetime import date, datetime
+
 import pytest
-from datetime import datetime, date
+
 from models.prescription import (
-    Prescription,
-    ValidationStatus,
-    ProcessingStatus,
     InputFormat,
+    Prescription,
+    ProcessingStatus,
+    ValidationStatus,
 )
 
 

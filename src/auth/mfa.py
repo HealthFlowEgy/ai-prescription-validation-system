@@ -3,14 +3,15 @@ Multi-Factor Authentication (MFA) service using TOTP (Time-based One-Time Passwo
 Implements RFC 6238 TOTP standard.
 """
 
+import base64
+import io
+import logging
+import secrets
+from datetime import datetime
+from typing import Dict, List, Optional
+
 import pyotp
 import qrcode
-import io
-import base64
-import secrets
-from typing import Optional, Dict, List
-from datetime import datetime
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ mfa_service = MFAService(issuer_name="HealthFlow AI")
 
 
 # MFA API endpoints
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify, request
 
 mfa_bp = Blueprint("mfa", __name__, url_prefix="/api/mfa")
 
@@ -163,8 +164,8 @@ def enroll_mfa():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
     from src.database import db
+    from src.models.user import User
 
     # Authenticate user
     auth_header = request.headers.get("Authorization")
@@ -233,9 +234,9 @@ def enable_mfa():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
-    from src.models.audit_log import AuditLog
     from src.database import db
+    from src.models.audit_log import AuditLog
+    from src.models.user import User
 
     # Authenticate user
     auth_header = request.headers.get("Authorization")
@@ -301,9 +302,9 @@ def disable_mfa():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
-    from src.models.audit_log import AuditLog
     from src.database import db
+    from src.models.audit_log import AuditLog
+    from src.models.user import User
 
     # Authenticate user
     auth_header = request.headers.get("Authorization")
@@ -443,8 +444,8 @@ def regenerate_backup_codes():
         }
     """
     from src.auth.jwt_service import jwt_service
-    from src.models.user import User
     from src.database import db
+    from src.models.user import User
 
     # Authenticate user
     auth_header = request.headers.get("Authorization")
