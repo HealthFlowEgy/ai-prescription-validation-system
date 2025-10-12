@@ -1,0 +1,113 @@
+# Kong API Gateway Helm chart values for production deployment
+
+image:
+  repository: kong
+  tag: "3.4"
+
+env:
+  database: postgres
+  pg_host: postgresql-ha
+  pg_port: 5432
+  pg_user: kong
+  pg_password_secret: kong-postgres-password
+  pg_database: kong
+  
+  # Admin API
+  admin_api_uri: http://kong-admin:8001
+  admin_listen: 0.0.0.0:8001
+  
+  # Proxy
+  proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 ssl http2
+  
+  # Rate Limiting
+  rate_limiting_policy: redis
+  
+  # Logging
+  log_level: notice
+  
+  # Security
+  ssl_cipher_suite: modern
+  ssl_protocols: TLSv1.2 TLSv1.3
+
+# Ingress controller
+ingressController:
+  enabled: true
+  installCRDs: true
+  
+  env:
+    # Publish Kong services
+    publish_service: healthflow/kong-proxy
+    
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Proxy service
+proxy:
+  enabled: true
+  type: LoadBalancer
+  
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+  
+  http:
+    enabled: true
+    servicePort: 80
+    containerPort: 8000
+  
+  tls:
+    enabled: true
+    servicePort: 443
+    containerPort: 8443
+    parameters:
+    - http2
+
+# Admin API
+admin:
+  enabled: true
+  type: ClusterIP
+  
+  http:
+    enabled: true
+    servicePort: 8001
+    containerPort: 8001
+
+# Enterprise features (if using Kong Enterprise)
+enterprise:
+  enabled: false
+
+# Resource limits
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+
+# PostgreSQL (Kong database)
+postgresql:
+  enabled: true
+  auth:
+    username: kong
+    database: kong
+

@@ -12,19 +12,20 @@ Features:
 - Encryption at rest
 """
 
-import os
-import sys
-import subprocess
+import gzip
+import hashlib
+import json
 import logging
-import boto3
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-import json
-import hashlib
-import gzip
-import shutil
-from typing import Optional, Dict, List
-from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+import boto3
 import psycopg2
 
 logging.basicConfig(

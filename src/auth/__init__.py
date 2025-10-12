@@ -4,15 +4,14 @@ Implements JWT-based authentication with refresh tokens and RBAC.
 """
 
 from .jwt_service import jwt_service, require_auth
-from .rbac import RBACService, Permission, Role, require_permission, require_role
+from .rbac import Permission, RBACService, Role, require_permission, require_role
 
 __all__ = [
-    'jwt_service',
-    'require_auth',
-    'RBACService',
-    'Permission',
-    'Role',
-    'require_permission',
-    'require_role'
+    "jwt_service",
+    "require_auth",
+    "RBACService",
+    "Permission",
+    "Role",
+    "require_permission",
+    "require_role",
 ]
-

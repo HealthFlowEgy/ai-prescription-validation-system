@@ -8,13 +8,14 @@ import os
 import sys
 from pathlib import Path
 
+
 def download_model():
     """Download and cache Donut model"""
-    
+
     model_name = "chinmays18/medical-prescription-ocr"
     cache_dir = Path("src/ml_models/donut_ocr")
     cache_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print("=" * 60)
     print("📥 Downloading Donut OCR Model")
     print("=" * 60)
@@ -22,28 +23,24 @@ def download_model():
     print(f"   Cache: {cache_dir}")
     print(f"   Size: ~800 MB (this may take a few minutes)")
     print()
-    
+
     try:
         from transformers import DonutProcessor, VisionEncoderDecoderModel
-        
+
         # Download processor
         print("⏬ Downloading processor...")
-        processor = DonutProcessor.from_pretrained(
-            model_name,
-            cache_dir=str(cache_dir)
-        )
+        processor = DonutProcessor.from_pretrained(model_name, cache_dir=str(cache_dir))
         print("✅ Processor downloaded successfully")
         print()
-        
+
         # Download model
         print("⏬ Downloading model (this may take several minutes)...")
         model = VisionEncoderDecoderModel.from_pretrained(
-            model_name,
-            cache_dir=str(cache_dir)
+            model_name, cache_dir=str(cache_dir)
         )
         print("✅ Model downloaded successfully")
         print()
-        
+
         print("=" * 60)
         print("✅ Donut OCR model successfully downloaded!")
         print("=" * 60)
@@ -52,9 +49,9 @@ def download_model():
         print()
         print("You can now use the Donut OCR service in your application.")
         print()
-        
+
         return True
-        
+
     except ImportError as e:
         print("❌ Error: Required packages not installed")
         print()
@@ -62,7 +59,7 @@ def download_model():
         print("   pip install -r requirements-donut.txt")
         print()
         return False
-        
+
     except Exception as e:
         print(f"❌ Error downloading model: {e}")
         print()
@@ -72,6 +69,7 @@ def download_model():
         print("3. Try again - downloads can sometimes timeout")
         print()
         return False
+
 
 if __name__ == "__main__":
     success = download_model()

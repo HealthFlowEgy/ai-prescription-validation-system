@@ -31,7 +31,7 @@ pymongo==4.6.0
 # AUTHENTICATION & SECURITY
 # ============================================================================
 bcrypt==4.1.2
-cryptography==41.0.8
+cryptography==43.0.3
 PyJWT==2.8.0
 authlib==1.2.1
 pyotp==2.9.0
@@ -52,7 +52,7 @@ jsonschema==4.20.0
 # ============================================================================
 # FHIR R4 INTEGRATION
 # ============================================================================
-fhir.resources==7.0.2
+fhir.resources==8.1.0  # Updated for pydantic v2 compatibility
 fhirclient==4.1.0
 hl7apy==1.3.4
 pydicom==2.4.4
@@ -89,7 +89,7 @@ PyPDF2==3.0.1
 requests==2.32.5
 httpx==0.25.2
 aiohttp==3.9.1
-urllib3==2.5.0
+# urllib3 - Let pip resolve version automatically based on dependencies
 
 # ============================================================================
 # TASK QUEUE & ASYNC
@@ -176,27 +176,31 @@ kubernetes==28.1.0
 # HEALTHCARE SPECIFIC
 # ============================================================================
 # Medical coding systems
-icd10-cm==2023.1
-snomed-ct==2023.1
+# Note: These packages are not available in PyPI with these versions
+# Install from official sources or use alternative packages
+# icd10-cm==2023.1  # Not available in PyPI
+# snomed-ct==2023.1  # Not available in PyPI
 
 # Drug databases
-rxnorm==2023.1
-ndc==2023.1
+# rxnorm==2023.1  # Not available in PyPI
+# ndc==2023.1  # Not available in PyPI
 
 # Clinical decision support
-cds-hooks==1.0.0
+# cds-hooks==1.0.0  # Not available in PyPI
 
 # ============================================================================
 # INTERNATIONAL STANDARDS
 # ============================================================================
+# Note: These packages are not available in PyPI
+# Install from official sources when needed
 # Estonia X-Road integration
-x-road-client==1.0.0
+# x-road-client==1.0.0  # Not available in PyPI
 
 # NHS CIS2 authentication
-nhs-cis2==1.0.0
+# nhs-cis2==1.0.0  # Not available in PyPI
 
 # Netherlands MedCom standards
-medcom-fhir==1.0.0
+# medcom-fhir==1.0.0  # Not available in PyPI
 
 # ============================================================================
 # ADDITIONAL UTILITIES
@@ -212,9 +216,9 @@ cssselect==1.2.0
 # ============================================================================
 # PERFORMANCE & CACHING
 # ============================================================================
-memcached==1.59
-python-memcached==1.59
-django-redis==5.4.0
+# memcached==1.59  # Not available in PyPI
+python-memcached==1.62
+# django-redis==5.4.0  # Django-specific, not needed for Flask
 
 # ============================================================================
 # INTERNATIONALIZATION
@@ -244,7 +248,7 @@ invoke==2.2.0
 pylint==3.0.3
 autopep8==2.0.4
 vulture==2.10
-safety==2.3.5
+# safety==3.6.2  # Moved to CI/CD workflow - conflicts with spacy typer requirement  # Upgraded for packaging>=22.0 compatibility
 
 # ============================================================================
 # PRODUCTION MONITORING
@@ -257,7 +261,7 @@ rollbar==0.16.3
 # VERSION CONSTRAINTS
 # ============================================================================
 # Ensure compatibility with Python 3.11+
-python-version>=3.11
+# Note: Python version is specified in setup.py or pyproject.toml, not here
 
 # Security updates
 setuptools>=65.5.1
@@ -344,12 +348,39 @@ certifi==2025.8.3
 typing-extensions==4.14.1
 
 # HIPAA Compliance Security Updates
-cryptography>=41.0.0
+# cryptography version specified above in AUTHENTICATION & SECURITY section
 
 
 # MFA dependencies
 pyotp==2.9.0
-qrcode[pil]==7.4.2
+# qrcode[pil]==7.4.2  # Duplicate - using qrcode==8.2 from main section
 
 # Load testing dependencies
 locust==2.15.1
+
+
+# ============================================================================
+# MISSING DEPENDENCIES - Added December 8, 2025
+# ============================================================================
+
+# Property-based testing
+hypothesis==6.92.1
+
+# AWS SDK for cloud storage and services
+boto3==1.34.10
+botocore==1.34.10
+
+# Chaos engineering
+chaostoolkit==1.17.1
+chaostoolkit-lib==1.40.0
+chaostoolkit-kubernetes==0.32.0
+
+# Additional testing utilities
+pytest-timeout==2.2.0
+pytest-xdist==3.5.0
+
+# Monitoring and observability
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+opentelemetry-instrumentation-flask==0.43b0
+

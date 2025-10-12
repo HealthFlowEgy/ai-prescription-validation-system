@@ -1,0 +1,15 @@
+# Kong JWT Authentication Plugin
+
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: jwt-auth
+  namespace: healthflow
+spec:
+  plugin: jwt
+  config:
+    key_claim_name: iss
+    secret_is_base64: false
+    run_on_preflight: true
+    maximum_expiration: 900  # 15 minutes
+
