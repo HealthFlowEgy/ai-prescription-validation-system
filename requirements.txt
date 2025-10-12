@@ -71,7 +71,7 @@ tensorflow==2.15.0
 torch==2.1.2
 transformers==4.36.2
 spacy==3.7.2
-nltk==3.9.1  # Upgraded for safety 3.6.2 compatibility (requires >=3.9)
+nltk==3.8.1
 
 # ============================================================================
 # IMAGE PROCESSING & OCR
@@ -113,8 +113,8 @@ elastic-apm==6.20.0
 # CONFIGURATION & ENVIRONMENT
 # ============================================================================
 python-dotenv==1.0.0
-pydantic==2.10.6  # Upgraded for safety 3.6.2 compatibility (requires >=2.6.0)
-pydantic-settings==2.7.1  # Upgraded to match pydantic version
+pydantic==2.5.2
+pydantic-settings==2.1.0
 click==8.1.7
 python-decouple==3.8
 
@@ -248,7 +248,7 @@ invoke==2.2.0
 pylint==3.0.3
 autopep8==2.0.4
 vulture==2.10
-safety==3.6.2  # Upgraded for packaging>=22.0 compatibility
+# safety==3.6.2  # Moved to CI/CD workflow - conflicts with spacy typer requirement  # Upgraded for packaging>=22.0 compatibility
 
 # ============================================================================
 # PRODUCTION MONITORING
@@ -327,7 +327,7 @@ wheel>=0.38.0
 # ============================================================================
 
 # Additional monitoring and metrics
-psutil==6.1.1  # Upgraded for safety 3.6.2 compatibility (requires >=6.1.0)
+psutil==5.9.6
 
 # Production WSGI server dependencies
 gevent==23.9.1
