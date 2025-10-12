@@ -353,7 +353,7 @@ typing-extensions==4.14.1
 
 # MFA dependencies
 pyotp==2.9.0
-qrcode[pil]==7.4.2
+# qrcode[pil]==7.4.2  # Duplicate - using qrcode==8.2 from main section
 
 # Load testing dependencies
 locust==2.15.1
