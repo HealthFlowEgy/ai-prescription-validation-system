@@ -327,7 +327,7 @@ wheel>=0.38.0
 # ============================================================================
 
 # Additional monitoring and metrics
-psutil==5.9.6
+psutil==6.1.1  # Upgraded for safety 3.6.2 compatibility (requires >=6.1.0)
 
 # Production WSGI server dependencies
 gevent==23.9.1
