@@ -341,7 +341,7 @@ Flask-Limiter==3.5.0
 
 # Security updates from Dependabot (Week 1 Sprint)
 certifi==2025.8.3
-typing-extensions==4.14.1
+typing-extensions==4.15.0
 
 # HIPAA Compliance Security Updates
 cryptography>=41.0.0
