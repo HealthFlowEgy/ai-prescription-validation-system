@@ -340,7 +340,7 @@ redis==6.4.0
 Flask-Limiter==3.5.0
 
 # Security updates from Dependabot (Week 1 Sprint)
-certifi==2025.8.3
+certifi==2025.10.5
 typing-extensions==4.14.1
 
 # HIPAA Compliance Security Updates
