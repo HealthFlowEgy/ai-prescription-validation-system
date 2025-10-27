@@ -487,6 +487,6 @@ This enhancement package is part of the AI-Based Digital Prescription Validation
 
 ---
 
-**Implementation completed by:** Manus AI Agent  
+**Implementation completed by:** HealthFlow team  
 **Date:** October 7, 2025  
 **Status:** ✅ Ready for Integration and Testing

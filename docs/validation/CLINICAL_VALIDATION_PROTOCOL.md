@@ -382,7 +382,7 @@ This exceeds the target of 95% and demonstrates clinical validity.
 
 ### 12.3 Timeline
 
-- Manuscript draft: 2 weeks post-analysis
+- HealthFlow teamcript draft: 2 weeks post-analysis
 - Internal review: 1 week
 - Submission: 3 weeks post-analysis
 - Expected publication: 6-9 months

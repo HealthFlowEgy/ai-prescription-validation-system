@@ -212,7 +212,7 @@ PUT /api/settings
 ## 🚀 Deployment
 
 ### Production Deployment
-The frontend is deployed using the Manus deployment service:
+The frontend is deployed using the HealthFlow deployment service:
 ```bash
 # Build for production
 npm run build
