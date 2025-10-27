@@ -55,21 +55,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:4000/health || exit 1
 
 # Intelligent entry point detection
-# Note: This is intentional to support multiple project structures (universal Dockerfile)
+# Explicit entry point: require a start script in package.json
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD if [ -f "dist/index.js" ]; then \
-      node dist/index.js; \
-    elif [ -f "dist/server.js" ]; then \
-      node dist/server.js; \
-    elif [ -f "src/index.ts" ]; then \
-      npx ts-node src/index.ts; \
-    elif [ -f "src/server.ts" ]; then \
-      npx ts-node src/server.ts; \
-    elif [ -f "index.js" ]; then \
-      node index.js; \
-    elif [ -f "server.js" ]; then \
-      node server.js; \
-    else \
-      echo "No entry point found" && exit 1; \
-    fi
+CMD ["npm", "start"]
 
