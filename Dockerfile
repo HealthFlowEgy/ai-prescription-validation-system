@@ -35,7 +35,7 @@ COPY . .
 # Create relaxed TypeScript config if tsconfig.json exists
 # Note: Relaxed config is intentional to allow builds with TypeScript errors
 RUN if [ -f tsconfig.json ]; then \
-      echo '{"extends": "./tsconfig.json", "compilerOptions": {"noEmit": false, "skipLibCheck": true, "strict": false, "noImplicitAny": false, "strictNullChecks": false}}' > tsconfig.build.json; \
+      echo '{"extends": "./tsconfig.json", "compilerOptions": {"noEmit": false, "skipLibCheck": true}}' > tsconfig.build.json; \
     fi
 
 # Try to build TypeScript, fallback to ts-node if it fails
