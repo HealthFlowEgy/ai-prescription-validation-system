@@ -15,15 +15,23 @@ COPY package*.json ./
 
 # Ultra-optimized npm install with retry mechanism
 RUN set -ex && \
-    for i in 1 2 3 4 5; do \
-      echo "Attempt $i: Installing dependencies..." && \
+    tries=0; \
+    until [ $tries -ge 5 ]; do \
+      tries=$((tries+1)); \
+      echo "Attempt $tries: Installing dependencies with npm ci..."; \
       npm ci --prefer-offline --no-audit --no-fund --omit=optional \
-        --fetch-timeout=120000 --fetch-retries=5 && break || \
-      ([ $i -lt 5 ] && echo "Retry in 10s..." && sleep 10) || \
-      (echo "npm ci failed, trying npm install..." && \
-       npm install --prefer-offline --no-audit --no-fund --omit=optional \
-         --fetch-timeout=120000 --fetch-retries=5); \
-    done
+        --fetch-timeout=120000 --fetch-retries=5 && break; \
+      if [ $tries -lt 5 ]; then \
+        echo "npm ci failed. Retry in 10s..."; \
+        sleep 10; \
+      fi; \
+    done; \
+    if [ $tries -eq 5 ] && ! npm ci --prefer-offline --no-audit --no-fund --omit=optional \
+        --fetch-timeout=120000 --fetch-retries=5; then \
+      echo "All attempts to run npm ci failed, falling back to npm install..."; \
+      npm install --prefer-offline --no-audit --no-fund --omit=optional \
+        --fetch-timeout=120000 --fetch-retries=5; \
+    fi
 
 # Install ts-node and typescript globally for fallback
 # Fixed: Removed || true to ensure these critical dependencies are installed
