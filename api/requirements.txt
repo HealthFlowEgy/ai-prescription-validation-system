@@ -9,7 +9,7 @@ Werkzeug==2.3.7
 # Authentication and security
 PyJWT==2.8.0
 bcrypt==4.1.2
-cryptography==41.0.8
+cryptography==41.0.7
 
 # Database support
 SQLAlchemy==2.0.23
