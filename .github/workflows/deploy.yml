@@ -100,7 +100,7 @@ jobs:
         token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
     
     - name: Deploy to Digital Ocean Droplet
-      uses: appleboy/ssh-action@v1.0.0
+      uses: appleboy/ssh-action@v1.2.2
       with:
         host: ${{ secrets.DROPLET_HOST }}
         username: ${{ secrets.DROPLET_USERNAME }}
